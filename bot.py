@@ -45,7 +45,7 @@ CATALOG: dict[str, dict] = {
     }
 }
 
-# user_id -> "waiting_stars" | "waiting_ton" | "adm_add:<key>" | "adm_new_cat"
+# user_id -> режим ввода
 WAITING_INPUT: dict[int, str] = {}
 
 # user_id -> {"comment": str, "amount_ton": float, "created_at": int}
@@ -164,6 +164,10 @@ def admin_panel_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"adm_add:{key}",
             )
         ])
+    rows.append([
+        InlineKeyboardButton(text="💰 Выдать баланс", callback_data="adm_give_bal"),
+        InlineKeyboardButton(text="🔎 Профиль по ID", callback_data="adm_check_user"),
+    ])
     rows.append([InlineKeyboardButton(text="📁 Новая позиция", callback_data="adm_new_cat")])
     rows.append([InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -389,7 +393,9 @@ async def cb_adm_panel(callback: CallbackQuery):
     WAITING_INPUT.pop(callback.from_user.id, None)
     lines = ["🛠 <b>Админ-панель</b>\n\n<b>Наличие:</b>"]
     for k, v in CATALOG.items():
-        lines.append(f"• <b>{v['title']}</b> (<code>{k}</code>): <b>{len(v.get('accounts', []))} шт.</b> — {v['price_rub']:.0f} ₽")
+        lines.append(
+            f"• <b>{v['title']}</b> (<code>{k}</code>): <b>{len(v.get('accounts', []))} шт.</b> — {v['price_rub']:.0f} ₽"
+        )
 
     lines.append(
         "\n<b>Формат загрузки:</b> по одному аккаунту на строку\n"
@@ -421,6 +427,42 @@ async def cb_adm_add(callback: CallbackQuery):
         f"➕ <b>Загрузка в {item['title']}</b>\n\n"
         "Отправь список аккаунтов (каждый с новой строки):\n"
         "<code>+447700900123:StringSession</code> или просто <code>+447700900123</code>",
+        parse_mode="HTML",
+        reply_markup=back_to_main_keyboard(),
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "adm_give_bal")
+async def cb_adm_give_bal(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
+    WAITING_INPUT[callback.from_user.id] = "adm_give_bal"
+    await callback.message.edit_text(
+        "💰 <b>Выдача баланса</b>\n\n"
+        "Отправь в формате:\n"
+        "<code>ID_ЮЗЕРА СУММА_РУБЛЕЙ</code>\n\n"
+        "Пример:\n"
+        "<code>987654321 500</code>\n"
+        "<i>(чтобы списать — укажи минус, например: <code>987654321 -100</code>)</i>",
+        parse_mode="HTML",
+        reply_markup=back_to_main_keyboard(),
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "adm_check_user")
+async def cb_adm_check_user(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
+    WAITING_INPUT[callback.from_user.id] = "adm_check_user"
+    await callback.message.edit_text(
+        "🔎 <b>Проверка профиля по ID</b>\n\n"
+        "Отправь числовой <code>user_id</code> покупателя:",
         parse_mode="HTML",
         reply_markup=back_to_main_keyboard(),
     )
@@ -668,6 +710,91 @@ async def handle_deposit_amount_input(message: Message):
         return
 
     raw_text = (message.text or "").strip()
+
+    if mode == "adm_give_bal" and is_admin(user_id):
+        WAITING_INPUT.pop(user_id, None)
+        parts = raw_text.replace(",", ".").split()
+        if len(parts) < 2 or not parts[0].isdigit():
+            await message.answer(
+                "Формат: <code>ID_ЮЗЕРА СУММА_РУБЛЕЙ</code>, например: <code>123456789 300</code>",
+                parse_mode="HTML",
+                reply_markup=admin_panel_keyboard(),
+            )
+            return
+
+        target_id = int(parts[0])
+        try:
+            delta_rub = round(float(parts[1]), 2)
+        except ValueError:
+            await message.answer("Сумма должна быть числом.", reply_markup=admin_panel_keyboard())
+            return
+
+        cur_rub = get_rub_balance(target_id)
+        if delta_rub >= 0:
+            add_stars = int(round(delta_rub / RUB_PER_STAR)) if RUB_PER_STAR > 0 else 0
+            if add_stars > 0:
+                USER_STARS_BALANCE[target_id] = USER_STARS_BALANCE.get(target_id, 0) + add_stars
+            else:
+                add_ton = round(delta_rub / RUB_PER_TON, 4) if RUB_PER_TON > 0 else delta_rub
+                USER_TON_BALANCE[target_id] = round(USER_TON_BALANCE.get(target_id, 0.0) + add_ton, 4)
+        else:
+            deduct_rub_balance(target_id, abs(delta_rub))
+
+        new_rub = get_rub_balance(target_id)
+        await message.answer(
+            f"✅ <b>Баланс обновлён!</b>\n\n"
+            f"🆔 <b>ID:</b> <code>{target_id}</code>\n"
+            f"Было: <b>{cur_rub:.2f} ₽</b>\n"
+            f"Изменение: <b>{delta_rub:+.2f} ₽</b>\n"
+            f"Стало: <b>{new_rub:.2f} ₽</b>",
+            parse_mode="HTML",
+            reply_markup=admin_panel_keyboard(),
+        )
+        try:
+            await message.bot.send_message(
+                chat_id=target_id,
+                text=f"💳 Ваш баланс изменён администратором на <b>{delta_rub:+.2f} ₽</b>.\nТекущий баланс: <b>{new_rub:.2f} ₽</b>",
+                parse_mode="HTML",
+            )
+        except Exception:
+            pass
+        return
+
+    if mode == "adm_check_user" and is_admin(user_id):
+        WAITING_INPUT.pop(user_id, None)
+        if not raw_text.isdigit():
+            await message.answer(
+                "Введи числовой <code>user_id</code>, например: <code>123456789</code>",
+                parse_mode="HTML",
+                reply_markup=admin_panel_keyboard(),
+            )
+            return
+
+        target_id = int(raw_text)
+        rub_bal = get_rub_balance(target_id)
+        stars_bal = USER_STARS_BALANCE.get(target_id, 0)
+        ton_bal = USER_TON_BALANCE.get(target_id, 0.0)
+        orders = PURCHASE_HISTORY.get(target_id, [])
+        last_acc = LAST_ISSUED_ACCOUNT.get(target_id)
+
+        text = (
+            f"👤 <b>Профиль пользователя</b>\n\n"
+            f"🆔 <b>ID:</b> <code>{target_id}</code>\n"
+            f"💰 <b>Баланс:</b> <b>{rub_bal:.2f} ₽</b>\n"
+            f"<i>(⭐ {stars_bal} • 💎 {ton_bal:.4f} TON)</i>\n"
+            f"🛒 <b>Покупок:</b> {len(orders)} шт."
+        )
+        if last_acc:
+            text += f"\n📱 <b>Последний номер:</b> <code>{last_acc.get('phone', '-')}</code>"
+        if orders:
+            text += "\n\n<b>История покупок:</b>\n" + "\n".join(f"• <code>{o}</code>" for o in orders[-10:])
+
+        await message.answer(
+            text,
+            parse_mode="HTML",
+            reply_markup=admin_panel_keyboard(),
+        )
+        return
 
     if mode.startswith("adm_add:") and is_admin(user_id):
         key = mode.split(":", 1)[1]
@@ -957,180 +1084,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    def _admin_panel_kb_ext() -> InlineKeyboardMarkup:
-    rows: list[list[InlineKeyboardButton]] = []
-    for key, item in CATALOG.items():
-        cnt = len(item.get("accounts", []))
-        rows.append([
-            InlineKeyboardButton(
-                text=f"➕ Залить в {item['title']} ({cnt} шт.)",
-                callback_data=f"adm_add:{key}",
-            )
-        ])
-    rows.append([
-        InlineKeyboardButton(text="💰 Выдать баланс", callback_data="adm_give_bal"),
-        InlineKeyboardButton(text="🔎 Профиль по ID", callback_data="adm_check_user"),
-    ])
-    rows.append([InlineKeyboardButton(text="📁 Новая позиция", callback_data="adm_new_cat")])
-    rows.append([InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
-
-
-admin_panel_keyboard = _admin_panel_kb_ext
-
-
-@dp.callback_query(F.data == "adm_panel")
-async def cb_adm_panel_ext(callback: CallbackQuery):
-    if not is_admin(callback.from_user.id):
-        await callback.answer("Нет доступа", show_alert=True)
-        return
-
-    WAITING_INPUT.pop(callback.from_user.id, None)
-    lines = ["🛠 <b>Админ-панель</b>\n\n<b>Наличие:</b>"]
-    for k, v in CATALOG.items():
-        lines.append(
-            f"• <b>{v['title']}</b> (<code>{k}</code>): <b>{len(v.get('accounts', []))} шт.</b> — {v['price_rub']:.0f} ₽"
-        )
-
-    lines.append(
-        "\n<b>Формат загрузки:</b> по одному аккаунту на строку\n"
-        "<code>+447700900123:StringSession</code> или просто <code>+447700900123</code>\n"
-        "<b>Ручной код:</b> <code>/code &lt;user_id&gt; &lt;КОД&gt;</code>"
-    )
-    await callback.message.edit_text(
-        "\n".join(lines),
-        parse_mode="HTML",
-        reply_markup=admin_panel_keyboard(),
-    )
-    await callback.answer()
-
-
-@dp.callback_query(F.data == "adm_give_bal")
-async def cb_adm_give_bal(callback: CallbackQuery):
-    if not is_admin(callback.from_user.id):
-        await callback.answer("Нет доступа", show_alert=True)
-        return
-
-    WAITING_INPUT[callback.from_user.id] = "adm_give_bal"
-    await callback.message.edit_text(
-        "💰 <b>Выдача баланса</b>\n\n"
-        "Отправь в формате:\n"
-        "<code>ID_ЮЗЕРА СУММА_РУБЛЕЙ</code>\n\n"
-        "Пример:\n"
-        "<code>987654321 500</code>\n"
-        "<i>(чтобы списать — укажи минус, например: <code>987654321 -100</code>)</i>",
-        parse_mode="HTML",
-        reply_markup=back_to_main_keyboard(),
-    )
-    await callback.answer()
-
-
-@dp.callback_query(F.data == "adm_check_user")
-async def cb_adm_check_user(callback: CallbackQuery):
-    if not is_admin(callback.from_user.id):
-        await callback.answer("Нет доступа", show_alert=True)
-        return
-
-    WAITING_INPUT[callback.from_user.id] = "adm_check_user"
-    await callback.message.edit_text(
-        "🔎 <b>Проверка профиля по ID</b>\n\n"
-        "Отправь числовой <code>user_id</code> покупателя:",
-        parse_mode="HTML",
-        reply_markup=back_to_main_keyboard(),
-    )
-    await callback.answer()
-
-
-@dp.message(F.text & ~F.text.startswith("/"))
-async def handle_admin_ext_input(message: Message):
-    user_id = message.from_user.id
-    mode = WAITING_INPUT.get(user_id)
-    if not mode or not is_admin(user_id):
-        return
-
-    raw_text = (message.text or "").strip()
-
-    if mode == "adm_give_bal":
-        WAITING_INPUT.pop(user_id, None)
-        parts = raw_text.replace(",", ".").split()
-        if len(parts) < 2 or not parts[0].isdigit():
-            await message.answer(
-                "Формат: <code>ID_ЮЗЕРА СУММА_РУБЛЕЙ</code>, например: <code>123456789 300</code>",
-                parse_mode="HTML",
-                reply_markup=admin_panel_keyboard(),
-            )
-            return
-
-        target_id = int(parts[0])
-        try:
-            delta_rub = round(float(parts[1]), 2)
-        except ValueError:
-            await message.answer("Сумма должна быть числом.", reply_markup=admin_panel_keyboard())
-            return
-
-        cur_rub = get_rub_balance(target_id)
-        if delta_rub >= 0:
-            add_stars = int(round(delta_rub / RUB_PER_STAR)) if RUB_PER_STAR > 0 else 0
-            if add_stars > 0:
-                USER_STARS_BALANCE[target_id] = USER_STARS_BALANCE.get(target_id, 0) + add_stars
-            else:
-                add_ton = round(delta_rub / RUB_PER_TON, 4) if RUB_PER_TON > 0 else delta_rub
-                USER_TON_BALANCE[target_id] = round(USER_TON_BALANCE.get(target_id, 0.0) + add_ton, 4)
-        else:
-            deduct_rub_balance(target_id, abs(delta_rub))
-
-        new_rub = get_rub_balance(target_id)
-        await message.answer(
-            f"✅ <b>Баланс обновлён!</b>\n\n"
-            f"🆔 <b>ID:</b> <code>{target_id}</code>\n"
-            f"Было: <b>{cur_rub:.2f} ₽</b>\n"
-            f"Изменение: <b>{delta_rub:+.2f} ₽</b>\n"
-            f"Стало: <b>{new_rub:.2f} ₽</b>",
-            parse_mode="HTML",
-            reply_markup=admin_panel_keyboard(),
-        )
-        try:
-            await message.bot.send_message(
-                chat_id=target_id,
-                text=f"💳 Ваш баланс изменён администратором на <b>{delta_rub:+.2f} ₽</b>.\nТекущий баланс: <b>{new_rub:.2f} ₽</b>",
-                parse_mode="HTML",
-            )
-        except Exception:
-            pass
-        return
-
-    if mode == "adm_check_user":
-        WAITING_INPUT.pop(user_id, None)
-        if not raw_text.isdigit():
-            await message.answer(
-                "Введи числовой <code>user_id</code>, например: <code>123456789</code>",
-                parse_mode="HTML",
-                reply_markup=admin_panel_keyboard(),
-            )
-            return
-
-        target_id = int(raw_text)
-        rub_bal = get_rub_balance(target_id)
-        stars_bal = USER_STARS_BALANCE.get(target_id, 0)
-        ton_bal = USER_TON_BALANCE.get(target_id, 0.0)
-        orders = PURCHASE_HISTORY.get(target_id, [])
-        last_acc = LAST_ISSUED_ACCOUNT.get(target_id)
-
-        text = (
-            f"👤 <b>Профиль пользователя</b>\n\n"
-            f"🆔 <b>ID:</b> <code>{target_id}</code>\n"
-            f"💰 <b>Баланс:</b> <b>{rub_bal:.2f} ₽</b>\n"
-            f"<i>(⭐ {stars_bal} • 💎 {ton_bal:.4f} TON)</i>\n"
-            f"🛒 <b>Покупок:</b> {len(orders)} шт."
-        )
-        if last_acc:
-            text += f"\n📱 <b>Последний номер:</b> <code>{last_acc.get('phone', '-')}</code>"
-        if orders:
-            text += "\n\n<b>История покупок:</b>\n" + "\n".join(f"• <code>{o}</code>" for o in orders[-10:])
-
-        await message.answer(
-            text,
-            parse_mode="HTML",
-            reply_markup=admin_panel_keyboard(),
-        )
-        return
