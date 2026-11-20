@@ -875,3 +875,15 @@ async def start_web_server():
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
+import asyncio
+async def _run_all():
+    await start_web_server()
+    if "dp" in globals() and "bot" in globals():
+        await dp.start_polling(bot)
+    else:
+        while True:
+            await asyncio.sleep(3600)
+
+
+if __name__ == "__main__":
+    asyncio.run(_run_all())
