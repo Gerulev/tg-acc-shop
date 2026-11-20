@@ -3,20 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Dark Stors — Mini App</title>
+  <title>VelvetVault</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
       --bg: #0c0609;
       --card: #190c12;
       --card-2: #24111a;
-      --card-3: #301622;
-      --border: #441f2f;
+      --border: #431e2e;
       --text: #fff6fa;
-      --muted: #bc96a6;
+      --muted: #b994a4;
       --white: #ffffff;
       --dark: #15080e;
-      --crimson: #e12d53;
       --ok: #5be39b;
       --err: #ff5c77;
     }
@@ -25,123 +23,46 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      background:
-        radial-gradient(circle at 50% -8%, rgba(225, 45, 83, 0.24), transparent 46%),
-        var(--bg);
+      background: linear-gradient(180deg, #210c15 0%, var(--bg) 260px);
       color: var(--text);
       min-height: 100vh;
-      padding: 12px 14px 102px;
-    }
-
-    /* Экран загрузки с реальным процентом */
-    .splash {
-      position: fixed;
-      inset: 0;
-      z-index: 999;
-      background:
-        radial-gradient(circle at 50% 34%, rgba(225, 45, 83, 0.3), transparent 55%),
-        #0a0508;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 24px;
-      transition: opacity 0.35s ease, visibility 0.35s ease;
-    }
-    .splash.hide {
-      opacity: 0;
-      visibility: hidden;
-    }
-    .splash-badge {
-      width: 72px;
-      height: 72px;
-      border-radius: 22px;
-      background: linear-gradient(145deg, #2e101d, #16070d);
-      border: 1.5px solid rgba(255, 255, 255, 0.22);
-      box-shadow: 0 0 38px rgba(225, 45, 83, 0.35);
-      display: grid;
-      place-items: center;
-      font-size: 28px;
-      font-weight: 900;
-    }
-    .splash-name {
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: 1px;
-    }
-    .splash-handle {
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .splash-pct {
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--text);
-    }
-    .splash-bar {
-      width: 210px;
-      height: 6px;
-      border-radius: 99px;
-      background: rgba(255, 255, 255, 0.12);
-      overflow: hidden;
-    }
-    .splash-bar > div {
-      height: 100%;
-      width: 0%;
-      border-radius: 99px;
-      background: linear-gradient(90deg, var(--crimson), #ffffff);
-      transition: width 0.14s ease;
+      padding: 14px 14px 96px;
     }
 
     .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 12px;
+      gap: 10px;
+      margin-bottom: 14px;
     }
-    .brand-box {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-    .brand-sq {
-      width: 34px;
-      height: 34px;
-      border-radius: 11px;
-      background: linear-gradient(135deg, var(--crimson), #84142c);
-      display: grid;
-      place-items: center;
-      font-weight: 900;
-      font-size: 15px;
-    }
-    .brand-txt {
-      font-size: 17px;
+
+    .brand {
+      font-size: 18px;
       font-weight: 800;
     }
-    .top-btns {
+
+    .top-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
-    .pill-btn {
+
+    .pill {
       background: var(--card-2);
       border: 1px solid var(--border);
       color: var(--text);
       border-radius: 12px;
-      padding: 8px 11px;
-      font-size: 12.5px;
+      padding: 8px 12px;
+      font-size: 13px;
       font-weight: 800;
       cursor: pointer;
-      white-space: nowrap;
     }
-    .pill-btn:active { transform: scale(0.97); }
 
     .alert {
       background: var(--card-2);
@@ -155,50 +76,17 @@
     .alert.ok { border-color: rgba(91, 227, 155, 0.5); color: var(--ok); }
     .alert.err { border-color: rgba(255, 92, 119, 0.5); color: var(--err); }
 
-    .hero {
-      background: linear-gradient(135deg, #28101a 0%, #160a10 100%);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 15px;
-      margin-bottom: 10px;
+    .section-title {
+      font-size: 21px;
+      font-weight: 900;
+      margin-bottom: 4px;
     }
-    .hero h1 { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
-    .hero p { font-size: 13px; color: var(--muted); }
 
-    .quick-actions {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+    .section-sub {
+      font-size: 13px;
+      color: var(--muted);
       margin-bottom: 12px;
     }
-    .q-btn {
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 13px;
-      padding: 10px 8px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      text-align: center;
-    }
-    .q-btn:active { background: var(--card-2); }
-
-    .stats-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .st-box {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 6px;
-      text-align: center;
-    }
-    .st-val { font-size: 17px; font-weight: 900; }
-    .st-lbl { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 
     .input {
       width: 100%;
@@ -207,53 +95,27 @@
       border-radius: 14px;
       padding: 12px 14px;
       color: var(--text);
-      font-size: 14.5px;
+      font-size: 14px;
       outline: none;
       margin-bottom: 10px;
     }
-    .input:focus { border-color: var(--crimson); }
 
-    .chips {
-      display: flex;
-      gap: 7px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      margin-bottom: 10px;
-      scrollbar-width: none;
-    }
-    .chips::-webkit-scrollbar { display: none; }
-    .chip {
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: 12px;
-      padding: 8px 12px;
-      font-size: 12.5px;
-      font-weight: 700;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    .chip.active {
-      background: var(--white);
-      color: var(--dark);
-      border-color: var(--white);
-    }
-
-    .row-between {
+    .toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 12px;
       font-size: 12.5px;
       color: var(--muted);
     }
+
     .select {
       background: var(--card);
       border: 1px solid var(--border);
       color: var(--text);
-      border-radius: 12px;
-      padding: 8px 11px;
+      border-radius: 11px;
+      padding: 7px 10px;
       font-size: 12.5px;
       font-weight: 700;
       outline: none;
@@ -266,7 +128,8 @@
       padding: 14px;
       margin-bottom: 10px;
     }
-    .item-card {
+
+    .item-row {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
@@ -277,69 +140,25 @@
       justify-content: space-between;
       gap: 12px;
     }
+
     .item-title { font-size: 15.5px; font-weight: 800; margin-bottom: 3px; }
     .item-desc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
     .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex-shrink: 0; }
     .item-price { font-size: 16px; font-weight: 900; }
 
-    .acc-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 10px;
-    }
-    .acc-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .acc-phone {
-      font-size: 15px;
-      font-weight: 900;
-      font-family: monospace;
-    }
-    .acc-tag {
-      background: var(--card-2);
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      padding: 3px 8px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-    }
-    .code-box {
-      margin-top: 10px;
-      background: var(--card-2);
-      border: 1px solid rgba(91, 227, 155, 0.45);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-size: 13px;
-      color: var(--ok);
-      font-family: monospace;
-    }
-    .acc-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .btn-primary {
+    .btn-w {
       background: var(--white);
       color: var(--dark);
       border: none;
       border-radius: 12px;
-      padding: 9px 13px;
+      padding: 9px 14px;
       font-size: 13px;
       font-weight: 800;
       cursor: pointer;
     }
-    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-w:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .btn-sec {
+    .btn-d {
       background: var(--card-2);
       color: var(--text);
       border: 1px solid var(--border);
@@ -348,7 +167,6 @@
       font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
-      text-align: center;
     }
 
     .two-col {
@@ -357,13 +175,14 @@
       gap: 8px;
       margin: 12px 0;
     }
+
     .seg {
       background: var(--card-2);
       border: 1px solid var(--border);
       color: var(--muted);
       border-radius: 12px;
       padding: 10px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 800;
       cursor: pointer;
     }
@@ -373,70 +192,71 @@
       border-color: var(--white);
     }
 
-    .presets-4 {
+    .presets {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
       margin-bottom: 10px;
     }
+
     .pre {
       background: var(--card-2);
       border: 1px solid var(--border);
       color: var(--text);
-      border-radius: 11px;
-      padding: 9px 4px;
-      font-size: 12.5px;
+      border-radius: 12px;
+      padding: 10px 6px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
     }
-    .pre.active {
-      background: var(--card-3);
-      border-color: var(--white);
-    }
+    .pre.active { border-color: var(--white); }
 
-    .wallet-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+    .mono-box {
       background: var(--card-2);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 10px 12px;
-      margin-bottom: 10px;
-    }
-    .wallet-addr {
-      font-size: 11.5px;
+      font-size: 12px;
+      font-family: monospace;
       word-break: break-all;
+      margin-bottom: 10px;
       user-select: all;
     }
 
-    .menu-tile {
+    .code-res {
+      margin-top: 8px;
+      background: var(--card-2);
+      border: 1px solid rgba(91, 227, 155, 0.45);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--ok);
+      font-family: monospace;
+    }
+
+    .list-btn {
       width: 100%;
       background: var(--card);
       border: 1px solid var(--border);
       color: var(--text);
-      border-radius: 15px;
+      border-radius: 14px;
       padding: 13px 14px;
       margin-bottom: 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 700;
       cursor: pointer;
-      text-align: left;
     }
-    .menu-tile:active { background: var(--card-2); }
 
-    .footer-links {
-      margin-top: 16px;
+    .footer {
+      margin-top: 18px;
       font-size: 12px;
       color: var(--muted);
-      line-height: 1.65;
+      line-height: 1.7;
     }
-    .footer-links span {
+    .footer span {
       color: var(--text);
       text-decoration: underline;
       display: block;
@@ -444,7 +264,7 @@
       cursor: pointer;
     }
 
-    .bottom-bar {
+    .dock {
       position: fixed;
       left: 0;
       right: 0;
@@ -454,10 +274,11 @@
       padding: 7px 6px 13px;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 3px;
-      z-index: 50;
+      gap: 4px;
+      z-index: 40;
     }
-    .b-btn {
+
+    .dock-btn {
       background: transparent;
       border: none;
       color: var(--muted);
@@ -471,7 +292,7 @@
       font-weight: 700;
       cursor: pointer;
     }
-    .b-btn.active {
+    .dock-btn.active {
       background: var(--card-2);
       color: var(--text);
     }
@@ -480,252 +301,131 @@
   </style>
 </head>
 <body>
-  <!-- Экран загрузки -->
-  <div class="splash" id="splash">
-    <div class="splash-badge">DS</div>
-    <div class="splash-name">DARK STORS</div>
-    <div class="splash-handle">@DarkStors_bot</div>
-    <div class="splash-pct" id="splashPct">0%</div>
-    <div class="splash-bar"><div id="splashFill"></div></div>
-    <button class="btn-sec" style="margin-top: 6px;" onclick="closeSplash()">Открыть сразу</button>
-  </div>
-
-  <!-- Шапка -->
   <header class="topbar">
-    <div class="brand-box">
-      <div class="brand-sq">DS</div>
-      <div class="brand-txt">Dark Stors</div>
-    </div>
-    <div class="top-btns">
-      <button class="pill-btn" id="topBal" onclick="openTab('deposit')">0.00 ₽</button>
-      <button class="pill-btn" onclick="openBot()">🤖 Бот</button>
-      <button class="pill-btn" onclick="syncAll()">↻</button>
+    <div class="brand">VelvetVault</div>
+    <div class="top-actions">
+      <button class="pill" id="topBal" onclick="openTab('deposit')">0.00 ₽</button>
+      <button class="pill" onclick="openSupport()">Поддержка</button>
     </div>
   </header>
 
   <div id="alertBox" class="alert hidden"></div>
 
-  <!-- МАГАЗИН -->
   <section id="tab-shop">
-    <div class="hero">
-      <h1>Каталог @DarkStors_bot</h1>
-      <p>Единый баланс в ₽, покупка в один клик и выдача во вкладке «Мои»</p>
-    </div>
+    <div class="section-title">Магазин</div>
+    <div class="section-sub">Единый баланс в ₽</div>
 
-    <div class="quick-actions">
-      <button class="q-btn" onclick="openTab('deposit')">💳 Пополнить ₽</button>
-      <button class="q-btn" onclick="openTab('my')">📱 Мои аккаунты</button>
-      <button class="q-btn" onclick="openSupport()">💬 Поддержка</button>
-    </div>
+    <input class="input" id="qInput" type="text" placeholder="Поиск..." />
 
-    <div class="stats-3">
-      <div class="st-box">
-        <div class="st-val" id="sStock">0</div>
-        <div class="st-lbl">в наличии</div>
-      </div>
-      <div class="st-box">
-        <div class="st-val" id="sCats">0</div>
-        <div class="st-lbl">позиций</div>
-      </div>
-      <div class="st-box">
-        <div class="st-val" id="sOrders">0</div>
-        <div class="st-lbl">моих акков</div>
-      </div>
-    </div>
-
-    <input class="input" id="searchBox" type="text" placeholder="Поиск по каталогу..." />
-
-    <div class="chips" id="chipsRow">
-      <button class="chip active" data-f="all" onclick="setChip('all', this)">Все</button>
-      <button class="chip" data-f="cheap" onclick="setChip('cheap', this)">До 250 ₽</button>
-      <button class="chip" data-f="mid" onclick="setChip('mid', this)">250–600 ₽</button>
-      <button class="chip" data-f="exp" onclick="setChip('exp', this)">От 600 ₽</button>
-    </div>
-
-    <div class="row-between">
-      <span id="counterTxt">0 шт. • 0 поз.</span>
-      <select class="select" id="sortBox" onchange="renderCatalog()">
-        <option value="default">По умолчанию</option>
-        <option value="price_asc">Сначала дешевле</option>
-        <option value="price_desc">Сначала дороже</option>
+    <div class="toolbar">
+      <span id="stockInfo">0 шт. • 0 поз.</span>
+      <select class="select" id="sortSel" onchange="drawShop()">
+        <option value="std">По порядку</option>
+        <option value="asc">Дешевле</option>
+        <option value="desc">Дороже</option>
       </select>
     </div>
 
-    <div id="itemsContainer"></div>
+    <div id="shopList"></div>
   </section>
 
-  <!-- МОИ АККАУНТЫ -->
   <section id="tab-my" class="hidden">
-    <div class="hero">
-      <h1>Мои аккаунты</h1>
-      <p>Купленные аккаунты появляются здесь — нажми «Получить код»</p>
-    </div>
-
-    <div class="quick-actions">
-      <button class="q-btn" onclick="openTab('shop')">🛍 В магазин</button>
-      <button class="q-btn" onclick="openBot()">🤖 Открыть бота</button>
-      <button class="q-btn" onclick="openSupport()">💬 Поддержка</button>
-    </div>
-
-    <div id="myAccountsBox"></div>
+    <div class="section-title">Мои покупки</div>
+    <div class="section-sub">Нажми «Получить код» для входа в аккаунт</div>
+    <div id="myList"></div>
   </section>
 
-  <!-- ПОПОЛНЕНИЕ -->
   <section id="tab-deposit" class="hidden">
     <div class="card">
-      <div class="item-title" style="font-size: 18px;">Пополнение баланса (₽)</div>
-      <div class="item-desc">Баланс сейчас: <strong id="depBal" style="color: var(--text);">0.00 ₽</strong>. Звёзды и TON сразу зачисляются в ₽.</div>
+      <div class="item-title" style="font-size: 17px;">Пополнение (в ₽)</div>
+      <div class="item-desc">Баланс: <strong id="depBal" style="color: var(--text);">0.00 ₽</strong></div>
 
       <div class="two-col">
         <button class="seg active" id="segStars" onclick="setMethod('stars')">⭐ Звёзды → ₽</button>
         <button class="seg" id="segTon" onclick="setMethod('ton')">💎 TON → ₽</button>
       </div>
 
-      <div id="panelStars">
-        <div class="presets-4">
+      <div id="boxStars">
+        <div class="presets">
           <button class="pre active" onclick="setPreset(10, this)">10 ⭐</button>
           <button class="pre" onclick="setPreset(25, this)">25 ⭐</button>
           <button class="pre" onclick="setPreset(50, this)">50 ⭐</button>
-          <button class="pre" onclick="setPreset(100, this)">100 ⭐</button>
         </div>
-        <input class="input" id="customStars" type="number" min="1" step="1" placeholder="Своё число звёзд (например, 35)" oninput="onCustom('stars')" />
-        <div class="item-desc" id="rateStars" style="margin-bottom: 10px;">Курс: 1 ⭐ = 1.6 ₽</div>
+        <input class="input" id="inpStars" type="number" min="1" step="1" placeholder="Своё число звёзд" oninput="onCustom('stars')" />
+        <div class="item-desc" id="rateStars" style="margin-bottom: 10px;">1 ⭐ = 1.6 ₽</div>
       </div>
 
-      <div id="panelTon" class="hidden">
-        <div class="presets-4">
-          <button class="pre active" onclick="setPreset(0.25, this)">0.25</button>
-          <button class="pre" onclick="setPreset(0.5, this)">0.5</button>
+      <div id="boxTon" class="hidden">
+        <div class="presets">
+          <button class="pre active" onclick="setPreset(0.5, this)">0.5 TON</button>
           <button class="pre" onclick="setPreset(1, this)">1 TON</button>
-          <button class="pre" onclick="setPreset(3, this)">3 TON</button>
+          <button class="pre" onclick="setPreset(2, this)">2 TON</button>
         </div>
-        <input class="input" id="customTon" type="number" min="0.01" step="0.01" placeholder="Своя сумма TON (например, 0.75)" oninput="onCustom('ton')" />
-        <div class="wallet-row">
-          <div class="wallet-addr" id="walletAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
-          <button class="btn-sec" onclick="copyWallet()">Копировать</button>
-        </div>
-        <div class="item-desc" id="rateTon" style="margin-bottom: 10px;">Курс: 1 TON = 450 ₽</div>
+        <input class="input" id="inpTon" type="number" min="0.01" step="0.01" placeholder="Своя сумма TON" oninput="onCustom('ton')" />
+        <div class="mono-box" id="tonAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
+        <div class="item-desc" id="rateTon" style="margin-bottom: 10px;">1 TON = 450 ₽</div>
       </div>
 
-      <button class="btn-primary" id="submitDepBtn" style="width: 100%; padding: 13px;" onclick="runDeposit()">
-        ПОПОЛНИТЬ НА 10 ⭐ (В ₽)
-      </button>
+      <button class="btn-w" id="depBtn" style="width: 100%; padding: 12px;" onclick="doDeposit()">ПОПОЛНИТЬ</button>
     </div>
   </section>
 
-  <!-- ПРОФИЛЬ -->
   <section id="tab-profile" class="hidden">
     <div class="card">
-      <div class="item-title" style="font-size: 18px;" id="profName">Михаил</div>
-      <div class="item-desc" id="profMeta">@gerulev • ID: 622034883</div>
-      <div class="stats-3" style="margin-top: 12px; margin-bottom: 0;">
-        <div class="st-box">
-          <div class="st-val" id="pBal">0.00 ₽</div>
-          <div class="st-lbl">баланс</div>
-        </div>
-        <div class="st-box">
-          <div class="st-val" id="pOrd">0</div>
-          <div class="st-lbl">аккаунтов</div>
-        </div>
-        <div class="st-box">
-          <div class="st-val" id="pStk">0</div>
-          <div class="st-lbl">в наличии</div>
-        </div>
-      </div>
+      <div class="item-title" style="font-size: 17px;" id="uName">Михаил</div>
+      <div class="item-desc" id="uMeta">@gerulev • ID: 622034883</div>
+      <div class="item-desc" style="margin-top: 8px;">Баланс: <strong id="pBal" style="color: var(--text);">0.00 ₽</strong> • Заказов: <strong id="pOrd" style="color: var(--text);">0</strong></div>
     </div>
 
-    <button class="menu-tile" onclick="openTab('my')">
-      <span>📱 Мои аккаунты и коды входа</span>
+    <button class="list-btn" onclick="openTab('deposit')">
+      <span>Пополнить баланс</span>
       <span>›</span>
     </button>
-    <button class="menu-tile" onclick="openTab('deposit')">
-      <span>💳 Пополнить баланс (₽)</span>
-      <span>›</span>
-    </button>
-    <button class="menu-tile" onclick="openBot()">
-      <span>🤖 Открыть @DarkStors_bot</span>
+    <button class="list-btn" onclick="openSupport()">
+      <span>Поддержка (@gerulev)</span>
       <span>↗</span>
     </button>
-    <button class="menu-tile" onclick="openSupport()">
-      <span>💬 Поддержка (@gerulev)</span>
-      <span>↗</span>
-    </button>
-    <button class="menu-tile" onclick="syncAll()">
-      <span>↻ Синхронизировать с сервером</span>
+    <button class="list-btn" onclick="syncState()">
+      <span>Обновить</span>
       <span>↻</span>
     </button>
   </section>
 
-  <!-- ПОМОЩЬ -->
   <section id="tab-support" class="hidden">
-    <div class="hero">
-      <h1>Помощь и поддержка</h1>
-      <p>Получение кода, работа с @DarkStors_bot и связь с поддержкой</p>
-    </div>
-
-    <button class="menu-tile" onclick="openBot()">
-      <span>🤖 Перейти в @DarkStors_bot</span>
+    <div class="section-title">Поддержка</div>
+    <div class="section-sub">По вопросам покупок и кодов входа</div>
+    <button class="list-btn" onclick="openSupport()">
+      <span>Написать @gerulev</span>
       <span>↗</span>
     </button>
-    <button class="menu-tile" onclick="openSupport()">
-      <span>💬 Написать в поддержку (@gerulev)</span>
-      <span>↗</span>
-    </button>
-
-    <div class="card">
-      <div class="item-title">Как получить код входа?</div>
-      <div class="item-desc">Купленный аккаунт появляется во вкладке «Мои». Нажми «Получить код» прямо там — код отобразится в мини-аппе, а при необходимости можно зайти в @DarkStors_bot.</div>
-    </div>
   </section>
 
-  <div class="footer-links">
-    <div><strong>Dark Stors</strong> • @DarkStors_bot • 2026</div>
-    <span onclick="showMsg('Политика конфиденциальности: данные используются только для выдачи заказов.', 'ok')">Политика конфиденциальности</span>
-    <span onclick="showMsg('Пользовательское соглашение: проверяйте товар сразу после выдачи.', 'ok')">Пользовательское соглашение</span>
-    <span onclick="showMsg('Политика возврата: по спорным вопросам пишите @gerulev.', 'ok')">Политика возврата</span>
-  </div>
+  <footer class="footer">
+    <div><strong>VelvetVault</strong> • 2026</div>
+    <span onclick="showAlert('Политика конфиденциальности: данные используются только для выдачи заказов.', 'ok')">Политика конфиденциальности</span>
+    <span onclick="showAlert('Пользовательское соглашение: проверяйте товар сразу после получения.', 'ok')">Пользовательское соглашение</span>
+    <span onclick="showAlert('Политика возврата: обращения по заказам — в @gerulev.', 'ok')">Политика возврата</span>
+  </footer>
 
-  <!-- Нижняя навигация -->
-  <nav class="bottom-bar">
-    <button class="b-btn active" id="nav-shop" onclick="openTab('shop')">
-      <span>🛍</span>
-      <span>Магазин</span>
-    </button>
-    <button class="b-btn" id="nav-my" onclick="openTab('my')">
-      <span>📱</span>
-      <span>Мои</span>
-    </button>
-    <button class="b-btn" id="nav-deposit" onclick="openTab('deposit')">
-      <span>₽</span>
-      <span>Пополнить</span>
-    </button>
-    <button class="b-btn" id="nav-profile" onclick="openTab('profile')">
-      <span>👤</span>
-      <span>Профиль</span>
-    </button>
-    <button class="b-btn" id="nav-support" onclick="openTab('support')">
-      <span>💬</span>
-      <span>Помощь</span>
-    </button>
+  <nav class="dock">
+    <button class="dock-btn active" id="d-shop" onclick="openTab('shop')"><span>🛍</span><span>Магазин</span></button>
+    <button class="dock-btn" id="d-my" onclick="openTab('my')"><span>📦</span><span>Мои</span></button>
+    <button class="dock-btn" id="d-deposit" onclick="openTab('deposit')"><span>₽</span><span>Пополнить</span></button>
+    <button class="dock-btn" id="d-profile" onclick="openTab('profile')"><span>👤</span><span>Профиль</span></button>
+    <button class="dock-btn" id="d-support" onclick="openTab('support')"><span>💬</span><span>Помощь</span></button>
   </nav>
 
   <script>
     const API_BASE = "https://tg-acc-shop.onrender.com";
-    const BOT_URL = "https://t.me/DarkStors_bot";
     const SUPPORT_URL = "https://t.me/gerulev";
-
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
+    if (tg) { tg.ready(); tg.expand(); }
 
     const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
     const userId = tgUser ? Number(tgUser.id) : 622034883;
     const firstName = (tgUser && tgUser.first_name) || "Михаил";
     const username = (tgUser && tgUser.username) ? `@${tgUser.username}` : "@gerulev";
-
-    const STORAGE_KEY = `darkstors_my_accs_${userId}`;
+    const STORE_KEY = `vv_orders_${userId}`;
 
     let state = {
       balance_rub: 0,
@@ -736,254 +436,137 @@
       items: []
     };
 
-    let myAccounts = loadLocalAccounts();
-    let activeChip = "all";
+    let myOrders = loadOrders();
     let method = "stars";
     let preset = 10;
 
-    function loadLocalAccounts() {
+    function loadOrders() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (e) {
-        return [];
-      }
+        const raw = localStorage.getItem(STORE_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) { return []; }
     }
 
-    function saveLocalAccounts() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(myAccounts));
-      } catch (e) {}
+    function saveOrders() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(myOrders)); } catch (e) {}
     }
 
-    function mergeBackendOrders(ordersList) {
-      if (!Array.isArray(ordersList) || !ordersList.length) return;
-      const existingIds = new Set(myAccounts.map((a) => String(a.order_id || "")));
-      ordersList.forEach((entry, idx) => {
-        if (typeof entry === "object" && entry !== null) {
-          const oid = String(entry.order_id || `ORD-${idx + 1}`);
-          if (!existingIds.has(oid)) {
-            myAccounts.push({
-              order_id: oid,
-              title: entry.title || entry.item_title || "Аккаунт",
-              phone: entry.phone || "Номер в заказе",
-              two_fa: entry.two_fa || "",
-              code: entry.code || "",
-              status: "Выдан"
-            });
-            existingIds.add(oid);
-          }
-        } else if (typeof entry === "string") {
-          const oidMatch = entry.match(/(ORD-[A-Za-z0-9]+)/);
-          const oid = oidMatch ? oidMatch[1] : `HIST-${idx + 1}`;
-          if (!existingIds.has(oid)) {
-            const phoneMatch = entry.match(/(\+\d{6,16})/);
-            myAccounts.push({
-              order_id: oid,
-              title: entry,
-              phone: phoneMatch ? phoneMatch[1] : "Смотри в боте",
-              two_fa: "",
-              code: "",
-              status: "Выдан"
-            });
-            existingIds.add(oid);
-          }
-        }
-      });
-      saveLocalAccounts();
-    }
-
-    // Плавный прогресс экрана загрузки
-    let pct = 0;
-    const pctTimer = setInterval(() => {
-      pct = Math.min(92, pct + 14);
-      const pEl = document.getElementById("splashPct");
-      const fEl = document.getElementById("splashFill");
-      if (pEl) pEl.textContent = `${pct}%`;
-      if (fEl) fEl.style.width = `${pct}%`;
-    }, 80);
-
-    function closeSplash() {
-      clearInterval(pctTimer);
-      const pEl = document.getElementById("splashPct");
-      const fEl = document.getElementById("splashFill");
-      if (pEl) pEl.textContent = "100%";
-      if (fEl) fEl.style.width = "100%";
-      setTimeout(() => {
-        document.getElementById("splash").classList.add("hide");
-      }, 140);
-    }
-
-    setTimeout(closeSplash, 750);
-
-    function showMsg(text, type = "ok") {
+    function showAlert(msg, kind = "ok") {
       const el = document.getElementById("alertBox");
-      el.textContent = text;
-      el.className = `alert ${type}`;
+      el.textContent = msg;
+      el.className = `alert ${kind}`;
       el.classList.remove("hidden");
     }
 
-    function clearMsg() {
+    function clearAlert() {
       document.getElementById("alertBox").classList.add("hidden");
     }
 
-    function openExternal(url) {
-      if (tg && tg.openTelegramLink) {
-        tg.openTelegramLink(url);
-      } else {
-        window.open(url, "_blank");
-      }
-    }
-
-    function openBot() {
-      openExternal(BOT_URL);
-    }
-
     function openSupport() {
-      openExternal(SUPPORT_URL);
-    }
-
-    function copyWallet() {
-      const addr = document.getElementById("walletAddr").textContent || "";
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(addr).then(() => showMsg("Адрес TON скопирован", "ok")).catch(() => showMsg("Выдели адрес вручную", "ok"));
-      } else {
-        showMsg("Выдели адрес вручную", "ok");
-      }
+      if (tg && tg.openTelegramLink) tg.openTelegramLink(SUPPORT_URL);
+      else window.open(SUPPORT_URL, "_blank");
     }
 
     function openTab(tab) {
       ["shop", "my", "deposit", "profile", "support"].forEach((t) => {
         document.getElementById(`tab-${t}`).classList.toggle("hidden", t !== tab);
-        document.getElementById(`nav-${t}`).classList.toggle("active", t === tab);
+        document.getElementById(`d-${t}`).classList.toggle("active", t === tab);
       });
-      syncAll();
-    }
-
-    function setChip(chip, btn) {
-      activeChip = chip;
-      document.querySelectorAll("#chipsRow .chip").forEach((c) => c.classList.remove("active"));
-      if (btn) btn.classList.add("active");
-      renderCatalog();
+      syncState();
     }
 
     function setMethod(m) {
       method = m;
       document.getElementById("segStars").classList.toggle("active", m === "stars");
       document.getElementById("segTon").classList.toggle("active", m === "ton");
-      document.getElementById("panelStars").classList.toggle("hidden", m !== "stars");
-      document.getElementById("panelTon").classList.toggle("hidden", m !== "ton");
-
+      document.getElementById("boxStars").classList.toggle("hidden", m !== "stars");
+      document.getElementById("boxTon").classList.toggle("hidden", m !== "ton");
       if (m === "stars") {
-        document.getElementById("customStars").value = "";
+        document.getElementById("inpStars").value = "";
         preset = 10;
-        document.querySelectorAll("#panelStars .pre").forEach((b, i) => b.classList.toggle("active", i === 0));
+        document.querySelectorAll("#boxStars .pre").forEach((b, i) => b.classList.toggle("active", i === 0));
       } else {
-        document.getElementById("customTon").value = "";
-        preset = 0.25;
-        document.querySelectorAll("#panelTon .pre").forEach((b, i) => b.classList.toggle("active", i === 0));
+        document.getElementById("inpTon").value = "";
+        preset = 0.5;
+        document.querySelectorAll("#boxTon .pre").forEach((b, i) => b.classList.toggle("active", i === 0));
       }
       refreshDepBtn();
     }
 
     function setPreset(val, btn) {
       preset = Number(val);
-      const wrap = method === "stars" ? "#panelStars" : "#panelTon";
+      const wrap = method === "stars" ? "#boxStars" : "#boxTon";
       document.querySelectorAll(`${wrap} .pre`).forEach((b) => b.classList.remove("active"));
       if (btn) btn.classList.add("active");
-      if (method === "stars") {
-        document.getElementById("customStars").value = "";
-      } else {
-        document.getElementById("customTon").value = "";
-      }
+      if (method === "stars") document.getElementById("inpStars").value = "";
+      else document.getElementById("inpTon").value = "";
       refreshDepBtn();
     }
 
     function onCustom(m) {
-      const inp = document.getElementById(m === "stars" ? "customStars" : "customTon");
+      const inp = document.getElementById(m === "stars" ? "inpStars" : "inpTon");
       const val = parseFloat(String(inp.value || "").replace(",", ".").trim());
-      const wrap = m === "stars" ? "#panelStars" : "#panelTon";
+      const wrap = m === "stars" ? "#boxStars" : "#boxTon";
       if (!isNaN(val) && val > 0) {
         document.querySelectorAll(`${wrap} .pre`).forEach((b) => b.classList.remove("active"));
         preset = m === "stars" ? Math.floor(val) : val;
       } else {
-        preset = m === "stars" ? 10 : 0.25;
+        preset = m === "stars" ? 10 : 0.5;
       }
       refreshDepBtn();
     }
 
     function getAmount() {
       if (method === "stars") {
-        const raw = String(document.getElementById("customStars").value || "").trim();
-        if (raw) {
-          const n = parseInt(raw, 10);
-          return isNaN(n) ? 0 : n;
-        }
+        const raw = String(document.getElementById("inpStars").value || "").trim();
+        if (raw) return parseInt(raw, 10) || 0;
         return parseInt(preset, 10) || 0;
       }
-      const raw = String(document.getElementById("customTon").value || "").replace(",", ".").trim();
-      if (raw) {
-        const n = parseFloat(raw);
-        return isNaN(n) ? 0 : n;
-      }
+      const raw = String(document.getElementById("inpTon").value || "").replace(",", ".").trim();
+      if (raw) return parseFloat(raw) || 0;
       return parseFloat(preset) || 0;
     }
 
     function refreshDepBtn() {
       const amt = getAmount();
-      const btn = document.getElementById("submitDepBtn");
+      const btn = document.getElementById("depBtn");
       if (method === "stars") {
         const rub = (amt * Number(state.rub_per_star || 1.6)).toFixed(2);
-        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} ⭐ (+${rub} ₽)` : "УКАЖИ ЧИСЛО ЗВЁЗД";
+        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} ⭐ (+${rub} ₽)` : "УКАЖИ СУММУ";
       } else {
         const rub = (amt * Number(state.rub_per_ton || 450)).toFixed(2);
-        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} TON (+${rub} ₽)` : "УКАЖИ СУММУ TON";
+        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} TON (+${rub} ₽)` : "УКАЖИ СУММУ";
       }
     }
 
     function esc(s) {
-      return String(s || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
-    function renderCatalog() {
+    function drawShop() {
       const items = state.items || [];
-      const totalStock = items.reduce((a, b) => a + Number(b.count || 0), 0);
+      const total = items.reduce((a, b) => a + Number(b.count || 0), 0);
+      document.getElementById("stockInfo").textContent = `${total} шт. • ${items.length} поз.`;
 
-      document.getElementById("sStock").textContent = String(totalStock);
-      document.getElementById("sCats").textContent = String(items.length);
-      document.getElementById("pStk").textContent = String(totalStock);
-      document.getElementById("counterTxt").textContent = `${totalStock} шт. • ${items.length} поз.`;
-
-      const q = (document.getElementById("searchBox").value || "").trim().toLowerCase();
+      const q = (document.getElementById("qInput").value || "").trim().toLowerCase();
       let list = items.filter((it) => {
-        const t = (it.title || "").toLowerCase();
-        const d = (it.description || "").toLowerCase();
-        const p = Number(it.price_rub || 0);
-        const okSearch = !q || t.includes(q) || d.includes(q);
-        if (!okSearch) return false;
-        if (activeChip === "cheap") return p <= 250;
-        if (activeChip === "mid") return p > 250 && p <= 600;
-        if (activeChip === "exp") return p > 600;
-        return true;
+        if (!q) return true;
+        return (it.title || "").toLowerCase().includes(q) || (it.description || "").toLowerCase().includes(q);
       });
 
-      const sortMode = document.getElementById("sortBox").value;
-      if (sortMode === "price_asc") list = list.slice().sort((a, b) => Number(a.price_rub) - Number(b.price_rub));
-      if (sortMode === "price_desc") list = list.slice().sort((a, b) => Number(b.price_rub) - Number(a.price_rub));
+      const s = document.getElementById("sortSel").value;
+      if (s === "asc") list = list.slice().sort((a, b) => Number(a.price_rub) - Number(b.price_rub));
+      if (s === "desc") list = list.slice().sort((a, b) => Number(b.price_rub) - Number(a.price_rub));
 
-      const box = document.getElementById("itemsContainer");
+      const box = document.getElementById("shopList");
       if (!list.length) {
-        box.innerHTML = `<div class="card"><div class="item-desc">Сейчас в наличии пусто. Залей позиции через админку в @DarkStors_bot.</div></div>`;
+        box.innerHTML = `<div class="card"><div class="item-desc">Пока нет товаров в наличии.</div></div>`;
         return;
       }
 
       box.innerHTML = list.map((it) => `
-        <div class="item-card">
+        <div class="item-row">
           <div>
             <div class="item-title">${esc(it.title)}</div>
             <div class="item-desc">${esc(it.description || "")}</div>
@@ -991,46 +574,30 @@
           </div>
           <div class="item-right">
             <div class="item-price">${Number(it.price_rub).toFixed(0)} ₽</div>
-            <button class="btn-primary" onclick="buyItem('${esc(it.key)}')">Купить</button>
+            <button class="btn-w" onclick="buyItem('${esc(it.key)}')">Купить</button>
           </div>
         </div>
       `).join("");
     }
 
-    function renderMyAccounts() {
-      const box = document.getElementById("myAccountsBox");
-      const cnt = myAccounts.length;
-      document.getElementById("sOrders").textContent = String(cnt);
-      document.getElementById("pOrd").textContent = String(cnt);
-
-      if (!cnt) {
-        box.innerHTML = `<div class="card"><div class="item-desc">Купленных аккаунтов пока нет. Выбери позицию во вкладке «Магазин» — после покупки она сразу появится здесь.</div></div>`;
+    function drawMy() {
+      const box = document.getElementById("myList");
+      document.getElementById("pOrd").textContent = String(myOrders.length);
+      if (!myOrders.length) {
+        box.innerHTML = `<div class="card"><div class="item-desc">Покупок пока нет.</div></div>`;
         return;
       }
-
-      box.innerHTML = myAccounts.slice().reverse().map((acc) => {
-        const oid = esc(acc.order_id);
-        const twoFaHtml = acc.two_fa ? `<div class="item-desc" style="margin-top: 4px;">2FA: <strong style="color: var(--text);">${esc(acc.two_fa)}</strong></div>` : "";
-        const codeHtml = acc.code
-          ? `<div class="code-box">Код входа: <strong>${esc(acc.code)}</strong></div>`
-          : `<div class="item-desc" style="margin-top: 6px;">Код ещё не запрашивался</div>`;
-
-        return `
-          <div class="acc-card">
-            <div class="acc-top">
-              <div class="acc-phone">${esc(acc.phone || acc.title)}</div>
-              <div class="acc-tag">${oid}</div>
-            </div>
-            <div class="item-desc">${esc(acc.title || "")}</div>
-            ${twoFaHtml}
-            ${codeHtml}
-            <div class="acc-actions">
-              <button class="btn-primary" onclick="requestAccountCode('${oid}')">Получить код</button>
-              <button class="btn-sec" onclick="openBot()">В @DarkStors_bot</button>
-            </div>
+      box.innerHTML = myOrders.slice().reverse().map((o) => `
+        <div class="card">
+          <div class="item-title" style="font-family: monospace;">${esc(o.phone || o.title)}</div>
+          <div class="item-desc">${esc(o.title)} • ${esc(o.order_id)}</div>
+          ${o.two_fa ? `<div class="item-desc" style="margin-top: 4px;">2FA: <strong style="color: var(--text);">${esc(o.two_fa)}</strong></div>` : ""}
+          ${o.code ? `<div class="code-res">Код: <strong>${esc(o.code)}</strong></div>` : ""}
+          <div style="margin-top: 10px;">
+            <button class="btn-w" onclick="getCode('${esc(o.order_id)}')">Получить код</button>
           </div>
-        `;
-      }).join("");
+        </div>
+      `).join("");
     }
 
     function renderAll() {
@@ -1038,39 +605,44 @@
       document.getElementById("topBal").textContent = `${rub} ₽`;
       document.getElementById("depBal").textContent = `${rub} ₽`;
       document.getElementById("pBal").textContent = `${rub} ₽`;
+      document.getElementById("uName").textContent = firstName;
+      document.getElementById("uMeta").textContent = `${username} • ID: ${userId}`;
+      document.getElementById("rateStars").textContent = `1 ⭐ = ${state.rub_per_star} ₽`;
+      document.getElementById("rateTon").textContent = `1 TON = ${state.rub_per_ton} ₽`;
+      document.getElementById("tonAddr").textContent = state.crypto_wallet || "";
 
-      document.getElementById("profName").textContent = firstName;
-      document.getElementById("profMeta").textContent = `${username} • ID: ${userId}`;
-
-      document.getElementById("rateStars").textContent = `Курс: 1 ⭐ = ${state.rub_per_star} ₽`;
-      document.getElementById("rateTon").textContent = `Курс: 1 TON = ${state.rub_per_ton} ₽`;
-      document.getElementById("walletAddr").textContent = state.crypto_wallet || "";
-
-      mergeBackendOrders(state.orders || []);
+      const known = new Set(myOrders.map((x) => String(x.order_id || "")));
+      (state.orders || []).forEach((txt, i) => {
+        const s = String(txt || "");
+        const m = s.match(/(ORD-[A-Za-z0-9]+)/);
+        const oid = m ? m[1] : `ORD-H-${i + 1}`;
+        if (!known.has(oid)) {
+          const pm = s.match(/(\+\d{6,16})/);
+          myOrders.push({ order_id: oid, title: s, phone: pm ? pm[1] : "", two_fa: "", code: "" });
+          known.add(oid);
+        }
+      });
+      saveOrders();
       refreshDepBtn();
-      renderCatalog();
-      renderMyAccounts();
+      drawShop();
+      drawMy();
     }
 
-    async function syncAll() {
+    async function syncState() {
       try {
         const res = await fetch(`${API_BASE}/api/state?user_id=${encodeURIComponent(userId)}`);
         const data = await res.json();
         if (data && data.ok) {
           state = data;
           renderAll();
-        } else {
-          showMsg((data && data.error) || "Ошибка синхронизации", "err");
         }
       } catch (e) {
         renderAll();
-      } finally {
-        closeSplash();
       }
     }
 
     async function buyItem(itemKey) {
-      clearMsg();
+      clearAlert();
       try {
         const res = await fetch(`${API_BASE}/api/buy`, {
           method: "POST",
@@ -1079,100 +651,83 @@
         });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          showMsg((data && data.error) || "Ошибка покупки", "err");
+          showAlert((data && data.error) || "Ошибка покупки", "err");
           return;
         }
-
-        const itemObj = (state.items || []).find((x) => x.key === itemKey);
-        const orderId = data.order_id || `ORD-${Date.now().toString().slice(-5)}`;
-        myAccounts.push({
-          order_id: orderId,
-          title: itemObj ? itemObj.title : "Аккаунт",
-          phone: data.phone || "Номер выдан",
+        const it = (state.items || []).find((x) => x.key === itemKey);
+        myOrders.push({
+          order_id: data.order_id || `ORD-${Date.now().toString().slice(-5)}`,
+          title: it ? it.title : "Аккаунт",
+          phone: data.phone || "",
           two_fa: data.two_fa || "",
-          code: data.code || "",
-          status: "Выдан"
+          code: data.code || ""
         });
-        saveLocalAccounts();
-
-        showMsg(`Аккаунт куплен (${orderId}) и добавлен в «Мои». Нажми «Получить код» там или перейди в @DarkStors_bot.`, "ok");
-        await syncAll();
+        saveOrders();
+        showAlert("Куплено! Перейди во вкладку «Мои», чтобы получить код.", "ok");
+        await syncState();
         openTab("my");
       } catch (e) {
-        showMsg("Ошибка сети при покупке", "err");
+        showAlert("Ошибка сети при покупке", "err");
       }
     }
 
-    async function requestAccountCode(orderId) {
-      clearMsg();
-      const idx = myAccounts.findIndex((a) => a.order_id === orderId);
+    async function getCode(orderId) {
+      clearAlert();
+      const idx = myOrders.findIndex((x) => x.order_id === orderId);
       if (idx === -1) return;
-      const acc = myAccounts[idx];
-
+      const ord = myOrders[idx];
       try {
         const res = await fetch(`${API_BASE}/api/code`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: userId,
-            order_id: acc.order_id,
-            phone: acc.phone,
-            username
-          })
+          body: JSON.stringify({ user_id: userId, order_id: ord.order_id, phone: ord.phone, username })
         });
         const data = await res.json();
         if (res.ok && data && data.ok && data.code) {
-          myAccounts[idx].code = String(data.code);
-          saveLocalAccounts();
-          renderMyAccounts();
-          showMsg(`Код для ${acc.phone}: ${data.code}`, "ok");
+          myOrders[idx].code = String(data.code);
+          saveOrders();
+          drawMy();
+          showAlert(`Код получен: ${data.code}`, "ok");
           return;
         }
-      } catch (e) {}
-
-      myAccounts[idx].code = "Запрос отправлен — проверь мини-апп или @DarkStors_bot";
-      saveLocalAccounts();
-      renderMyAccounts();
-      showMsg("Запрос кода отправлен. Если код не пришёл в мини-апп автоматически, открой @DarkStors_bot.", "ok");
+        showAlert((data && data.error) || "Код пока не пришёл, попробуй ещё раз.", "err");
+      } catch (e) {
+        showAlert("Ошибка запроса кода", "err");
+      }
     }
 
-    async function runDeposit() {
-      clearMsg();
+    async function doDeposit() {
+      clearAlert();
       const amt = getAmount();
       if (!amt || amt <= 0) {
-        showMsg("Укажи сумму больше нуля", "err");
+        showAlert("Укажи сумму больше нуля", "err");
         return;
       }
-      const btn = document.getElementById("submitDepBtn");
+      const btn = document.getElementById("depBtn");
       btn.disabled = true;
       try {
         const res = await fetch(`${API_BASE}/api/deposit`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: userId,
-            method,
-            amount: amt,
-            username
-          })
+          body: JSON.stringify({ user_id: userId, method, amount: amt, username })
         });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          showMsg((data && data.error) || "Ошибка пополнения", "err");
+          showAlert((data && data.error) || "Ошибка пополнения", "err");
           return;
         }
-        showMsg(`Баланс пополнен! Текущий баланс: ${Number(data.balance_rub).toFixed(2)} ₽`, "ok");
-        await syncAll();
+        showAlert(`Баланс пополнен: ${Number(data.balance_rub).toFixed(2)} ₽`, "ok");
+        await syncState();
       } catch (e) {
-        showMsg("Ошибка сети при пополнении", "err");
+        showAlert("Ошибка сети при пополнении", "err");
       } finally {
         btn.disabled = false;
       }
     }
 
-    document.getElementById("searchBox").addEventListener("input", renderCatalog);
+    document.getElementById("qInput").addEventListener("input", drawShop);
     renderAll();
-    syncAll();
+    syncState();
   </script>
 </body>
 </html>
