@@ -6,7 +6,7 @@ import secrets
 import time
 from aiohttp import web, ClientSession
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import Command, CommandStart
 from aiogram.types import (
     Message,
     CallbackQuery,
@@ -25,30 +25,25 @@ TONCENTER_API_KEY = os.getenv("TONCENTER_API_KEY", "")
 SUPPORT_USERNAME = "gerulev"
 ADMIN_ID = int(os.getenv("ADMIN_ID", "622034883"))
 
-# Курсы для отображения баланса в рублях (₽) в профиле
 RUB_PER_STAR = float(os.getenv("RUB_PER_STAR", "1.6"))
 RUB_PER_TON = float(os.getenv("RUB_PER_TON", "450.0"))
 
-# Каталог товаров и пул свободных аккаунтов
+# Каталог: ключ -> товар и список свободных аккаунтов
+# Аккаунт: {"id": str, "phone": str, "secret": str}
 CATALOG: dict[str, dict] = {
     "uk_2016": {
         "title": "UK 2016",
         "price_rub": 250.0,
-        "description": "Аккаунт UK 2016. Выдаётся номер и кнопка запроса кода.",
+        "description": "Аккаунт UK 2016. После покупки выдаётся номер и кнопка запроса кода.",
         "accounts": [],
     }
 }
 
-# user_id -> "waiting_stars" | "waiting_ton" | "adm_add:<key>"
+# Состояния ввода: user_id -> "waiting_stars" | "waiting_ton" | "adm_add:<key>" | "adm_new_cat"
 WAITING_INPUT: dict[int, str] = {}
 
-# user_id -> {"comment": str, "amount_ton": float, "created_at": int}
 PENDING_DEPOSITS: dict[int, dict] = {}
-
-# user_id -> {"item_key": str, "comment": str, "amount_ton": float, "created_at": int}
 PENDING_ORDERS: dict[int, dict] = {}
-
-# user_id -> {"order_id": str, "phone": str}
 LAST_ISSUED_ACCOUNT: dict[int, dict] = {}
 
 PURCHASE_HISTORY: dict[int, list[str]] = {}
@@ -61,12 +56,13 @@ def is_admin(user_id: int) -> bool:
     return user_id == ADMIN_ID
 
 
-async def notify_admin(bot: Bot, text: str):
-    if ADMIN_ID:
-        try:
-            await bot.send_message(chat_id=ADMIN_ID, text=text, parse_mode="HTML")
-        except Exception:
-            pass
+async def notify_admin(bot: Bot, text: str) -> None:
+    if not ADMIN_ID:
+        return
+    try:
+        await bot.send_message(chat_id=ADMIN_ID, text=text, parse_mode="HTML")
+    except Exception:
+        pass
 
 
 def get_rub_balance(user_id: int) -> float:
@@ -78,20 +74,25 @@ def get_rub_balance(user_id: int) -> float:
 def deduct_rub_balance(user_id: int, amount_rub: float) -> bool:
     if get_rub_balance(user_id) < amount_rub:
         return False
+
     rem = round(amount_rub, 2)
+
     ton_bal = USER_TON_BALANCE.get(user_id, 0.0)
     if ton_bal > 0 and rem > 0 and RUB_PER_TON > 0:
         ton_val = ton_bal * RUB_PER_TON
         if ton_val >= rem:
-            USER_TON_BALANCE[user_id] = round(max(0.0, ton_bal - rem / RUB_PER_TON), 4)
+            spent_ton = round(rem / RUB_PER_TON, 4)
+            USER_TON_BALANCE[user_id] = round(max(0.0, ton_bal - spent_ton), 4)
             rem = 0.0
         else:
             USER_TON_BALANCE[user_id] = 0.0
             rem = round(rem - ton_val, 2)
+
     stars_bal = USER_STARS_BALANCE.get(user_id, 0)
     if stars_bal > 0 and rem > 0 and RUB_PER_STAR > 0:
         need = math.ceil(rem / RUB_PER_STAR)
         USER_STARS_BALANCE[user_id] = max(0, stars_bal - need)
+
     return True
 
 
@@ -113,9 +114,57 @@ def main_menu_keyboard(user_id: int = 0) -> InlineKeyboardMarkup:
             )
         ],
     ]
-    if user_id == ADMIN_ID:
+    if is_admin(user_id):
         rows.append([InlineKeyboardButton(text="🛠 Админка", callback_data="adm_panel")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def admin_panel_keyboard() -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    for key, item in CATALOG.items():
+        cnt = len(item.get("accounts", []))
+        rows.append([
+            InlineKeyboardButton(
+                text=f"➕ Залить в {item['title']} ({cnt} шт.)",
+                callback_data=f"adm_add:{key}",
+            )
+        ])
+    rows.append([InlineKeyboardButton(text="📁 Новая категория", callback_data="adm_new_cat")])
+    rows.append([InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def catalog_items_keyboard() -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    for key, item in CATALOG.items():
+        cnt = len(item.get("accounts", []))
+        if cnt > 0:
+            rows.append([
+                InlineKeyboardButton(
+                    text=f"{item['title']} — {item['price_rub']:.0f} ₽ ({cnt} шт.)",
+                    callback_data=f"item_view:{key}",
+                )
+            ])
+    rows.append([InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def item_view_keyboard(key: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Купить с баланса", callback_data=f"buy_acc:{key}")],
+            [InlineKeyboardButton(text="⬅️ В каталог", callback_data="menu_catalog")],
+        ]
+    )
+
+
+def issued_account_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📩 Запросить код входа", callback_data="req_code")],
+            [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")],
+        ]
+    )
 
 
 def deposit_choice_keyboard() -> InlineKeyboardMarkup:
@@ -135,23 +184,6 @@ def deposit_ton_check_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text="✅ Я оплатил (проверить TON)", callback_data="check_ton_deposit")],
             [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_deposit")],
-        ]
-    )
-
-
-def catalog_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")]
-        ]
-    )
-
-
-def payment_keyboard(item_key: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="✅ Я оплатил (проверить TON)", callback_data=f"check:{item_key}")],
-            [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel")],
         ]
     )
 
@@ -267,10 +299,21 @@ async def cmd_code(message: Message):
     if len(parts) < 3 or not parts[1].isdigit():
         await message.answer("Формат: <code>/code 123456789 КОД</code>", parse_mode="HTML")
         return
-    uid, code = int(parts[1]), parts[2].strip()
-    phone = (LAST_ISSUED_ACCOUNT.get(uid) or {}).get("phone", "аккаунта")
-    await message.bot.send_message(uid, f"🔑 Код для <code>{phone}</code>: <code>{code}</code>", parse_mode="HTML")
-    await message.answer(f"✅ Отправлено <code>{code}</code> -> <code>{uid}</code>", parse_mode="HTML")
+
+    uid = int(parts[1])
+    code = parts[2].strip()
+    acc = LAST_ISSUED_ACCOUNT.get(uid) or {}
+    phone = acc.get("phone", "аккаунта")
+
+    try:
+        await message.bot.send_message(
+            chat_id=uid,
+            text=f"🔑 <b>Код входа:</b> <code>{code}</code>\n<b>Номер:</b> <code>{phone}</code>",
+            parse_mode="HTML",
+        )
+        await message.answer(f"✅ Код <code>{code}</code> отправлен юзеру <code>{uid}</code>", parse_mode="HTML")
+    except Exception as exc:
+        await message.answer(f"❌ Ошибка отправки: <code>{exc}</code>", parse_mode="HTML")
 
 
 @dp.callback_query(F.data == "back_main")
@@ -288,31 +331,63 @@ async def cb_back_main(callback: CallbackQuery):
 @dp.callback_query(F.data == "adm_panel")
 async def cb_adm_panel(callback: CallbackQuery):
     if not is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
         return
+
     WAITING_INPUT.pop(callback.from_user.id, None)
-    txt = "🛠 <b>Админка</b>\n\n" + "\n".join(
-        f"• {v['title']} (<code>{k}</code>): <b>{len(v['accounts'])} шт.</b>"
-        for k, v in CATALOG.items()
+    lines = ["🛠 <b>Админ-панель</b>\n\n<b>Наличие:</b>"]
+    for k, v in CATALOG.items():
+        lines.append(f"• <b>{v['title']}</b> (<code>{k}</code>): <b>{len(v.get('accounts', []))} шт.</b> — {v['price_rub']:.0f} ₽")
+
+    lines.append(
+        "\n<b>Формат загрузки:</b> по одному аккаунту на строку\n"
+        "<code>+447700900123:заметка</code> или просто <code>+447700900123</code>\n"
+        "<b>Отправка кода:</b> <code>/code &lt;user_id&gt; &lt;КОД&gt;</code>"
     )
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        *[
-            [InlineKeyboardButton(text=f"➕ Залить в {v['title']}", callback_data=f"adm_add:{k}")]
-            for k, v in CATALOG.items()
-        ],
-        [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")],
-    ])
-    await callback.message.edit_text(txt, parse_mode="HTML", reply_markup=kb)
+    await callback.message.edit_text(
+        "\n".join(lines),
+        parse_mode="HTML",
+        reply_markup=admin_panel_keyboard(),
+    )
     await callback.answer()
 
 
 @dp.callback_query(F.data.startswith("adm_add:"))
 async def cb_adm_add(callback: CallbackQuery):
     if not is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
         return
+
     key = callback.data.split(":", 1)[1]
+    item = CATALOG.get(key)
+    if not item:
+        await callback.answer("Категория не найдена", show_alert=True)
+        return
+
     WAITING_INPUT[callback.from_user.id] = f"adm_add:{key}"
     await callback.message.edit_text(
-        "Кидай список строк (по одному акк на строку):\n<code>+447700900123:заметка</code> или просто <code>+447700900123</code>",
+        f"➕ <b>Загрузка в {item['title']}</b>\n\n"
+        "Отправь список аккаунтов (каждый с новой строки):\n"
+        "<code>+447700900123:доп_инфо</code> или просто <code>+447700900123</code>",
+        parse_mode="HTML",
+        reply_markup=back_to_main_keyboard(),
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "adm_new_cat")
+async def cb_adm_new_cat(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
+    WAITING_INPUT[callback.from_user.id] = "adm_new_cat"
+    await callback.message.edit_text(
+        "📁 <b>Новая категория</b>\n\n"
+        "Отправь строку:\n"
+        "<code>ключ|Название|Цена_в_рублях|Описание</code>\n\n"
+        "Пример:\n"
+        "<code>ru_2018|RU 2018|200|Аккаунт 2018 года</code>",
         parse_mode="HTML",
         reply_markup=back_to_main_keyboard(),
     )
@@ -322,32 +397,47 @@ async def cb_adm_add(callback: CallbackQuery):
 @dp.callback_query(F.data == "menu_catalog")
 async def cb_menu_catalog(callback: CallbackQuery):
     WAITING_INPUT.pop(callback.from_user.id, None)
-    avail = [(k, v) for k, v in CATALOG.items() if len(v.get("accounts", [])) > 0]
-    if not avail:
-        text = (
-            "🛍 <b>Каталог</b>\n\n"
-            "Сейчас в каталоге пусто — аккаунтов в наличии нет, выбора пока нет."
-        )
+    has_any = any(len(v.get("accounts", [])) > 0 for v in CATALOG.values())
+    if not has_any:
         await callback.message.edit_text(
-            text, parse_mode="HTML", reply_markup=catalog_keyboard()
+            "🛍 <b>Каталог</b>\n\nСейчас в каталоге пусто — аккаунтов в наличии нет, выбора пока нет.",
+            parse_mode="HTML",
+            reply_markup=back_to_main_keyboard(),
         )
         await callback.answer()
         return
 
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        *[
-            [InlineKeyboardButton(
-                text=f"{v['title']} — {v['price_rub']:.0f} ₽ ({len(v['accounts'])} шт.)",
-                callback_data=f"buy_acc:{k}",
-            )]
-            for k, v in avail
-        ],
-        [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")],
-    ])
     await callback.message.edit_text(
-        "🛍 <b>Каталог</b>\n\nВыберите позицию для покупки с баланса:",
+        "🛍 <b>Каталог</b>\n\nВыберите позицию:",
         parse_mode="HTML",
-        reply_markup=kb,
+        reply_markup=catalog_items_keyboard(),
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("item_view:"))
+async def cb_item_view(callback: CallbackQuery):
+    key = callback.data.split(":", 1)[1]
+    item = CATALOG.get(key)
+    if not item:
+        await callback.answer("Товар не найден", show_alert=True)
+        return
+
+    cnt = len(item.get("accounts", []))
+    if cnt <= 0:
+        await callback.answer("Нет в наличии", show_alert=True)
+        return
+
+    text = (
+        f"📦 <b>{item['title']}</b>\n\n"
+        f"{item.get('description', '')}\n\n"
+        f"💰 <b>Цена:</b> {item['price_rub']:.2f} ₽\n"
+        f"📊 <b>В наличии:</b> {cnt} шт."
+    )
+    await callback.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=item_view_keyboard(key),
     )
     await callback.answer()
 
@@ -357,33 +447,57 @@ async def cb_buy_acc(callback: CallbackQuery):
     uid = callback.from_user.id
     key = callback.data.split(":", 1)[1]
     item = CATALOG.get(key)
-    if not item or not item["accounts"]:
-        await callback.answer("Нет в наличии", show_alert=True)
+    if not item or not item.get("accounts"):
+        await callback.answer("Сейчас нет товаров в наличии", show_alert=True)
         return
+
     price = float(item["price_rub"])
     if get_rub_balance(uid) < price:
-        await callback.answer(f"Не хватает баланса ({price:.2f} ₽)", show_alert=True)
+        await callback.answer(
+            f"Недостаточно средств ({price:.2f} ₽). Пополни баланс!",
+            show_alert=True,
+        )
         return
+
     acc = item["accounts"].pop(0)
     if not deduct_rub_balance(uid, price):
         item["accounts"].insert(0, acc)
-        await callback.answer("Ошибка списания", show_alert=True)
+        await callback.answer("Ошибка списания баланса", show_alert=True)
         return
+
     order_id = f"ORD-{secrets.token_hex(3).upper()}"
-    LAST_ISSUED_ACCOUNT[uid] = {"order_id": order_id, "phone": acc["phone"]}
-    PURCHASE_HISTORY.setdefault(uid, []).append(f"{order_id}: {item['title']} ({acc['phone']})")
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📩 Запросить код входа", callback_data="req_code")],
-        [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")],
-    ])
-    extra = f"\nИнфо: <code>{acc['secret']}</code>" if acc.get("secret") else ""
+    phone = acc.get("phone", "")
+    secret_info = acc.get("secret", "")
+
+    LAST_ISSUED_ACCOUNT[uid] = {
+        "order_id": order_id,
+        "item_title": item["title"],
+        "phone": phone,
+    }
+    PURCHASE_HISTORY.setdefault(uid, []).append(f"{order_id}: {item['title']} ({phone})")
+
+    extra = f"\n🔑 <b>Доп. инфо:</b> <code>{secret_info}</code>" if secret_info else ""
     await callback.message.edit_text(
-        f"✅ <b>Выдано!</b> Заказ <code>{order_id}</code>\nНомер: <code>{acc['phone']}</code>{extra}",
+        f"✅ <b>Аккаунт выдан!</b>\n\n"
+        f"<b>Заказ:</b> <code>{order_id}</code>\n"
+        f"<b>Товар:</b> {item['title']}\n"
+        f"<b>Номер:</b> <code>{phone}</code>{extra}\n\n"
+        "Введи номер и нажми <b>«Запросить код входа»</b>.",
         parse_mode="HTML",
-        reply_markup=kb,
+        reply_markup=issued_account_keyboard(),
     )
-    await callback.answer()
-    await notify_admin(callback.bot, f"🛒 Купил <code>{uid}</code> | {item['title']} | <code>{acc['phone']}</code>")
+    await callback.answer("Выдано!")
+
+    uname = f"@{callback.from_user.username}" if callback.from_user.username else "без юзернейма"
+    await notify_admin(
+        callback.bot,
+        f"🛒 <b>Покупка!</b>\n"
+        f"Юзер: {uname} (<code>{uid}</code>)\n"
+        f"Заказ: <code>{order_id}</code>\n"
+        f"Позиция: {item['title']} — <b>{price:.2f} ₽</b>\n"
+        f"Номер: <code>{phone}</code>\n"
+        f"Остаток: <b>{len(item['accounts'])} шт.</b>",
+    )
 
 
 @dp.callback_query(F.data == "req_code")
@@ -393,9 +507,14 @@ async def cb_req_code(callback: CallbackQuery):
     if not acc:
         await callback.answer("Нет выданного аккаунта", show_alert=True)
         return
+
+    uname = f"@{callback.from_user.username}" if callback.from_user.username else "без юзернейма"
     await notify_admin(
         callback.bot,
-        f"📩 Нужен код для <code>{acc['phone']}</code> (юзер <code>{uid}</code>)\n<code>/code {uid} КОД</code>",
+        f"📩 <b>Запрос кода!</b>\n"
+        f"Юзер: {uname} (<code>{uid}</code>)\n"
+        f"Номер: <code>{acc['phone']}</code>\n"
+        f"Отправить: <code>/code {uid} КОД</code>",
     )
     await callback.answer("Запрос отправлен!", show_alert=True)
 
@@ -475,33 +594,89 @@ async def cb_dep_method_ton(callback: CallbackQuery):
 
 
 @dp.message(F.text & ~F.text.startswith("/"))
-async def handle_deposit_amount_input(message: Message):
+async def handle_text_input(message: Message):
     user_id = message.from_user.id
     mode = WAITING_INPUT.get(user_id)
     if not mode:
         return
 
+    raw_text = (message.text or "").strip()
+
     if mode.startswith("adm_add:") and is_admin(user_id):
         key = mode.split(":", 1)[1]
+        item = CATALOG.get(key)
         WAITING_INPUT.pop(user_id, None)
-        lines = [x.strip() for x in (message.text or "").splitlines() if x.strip()]
+        if not item:
+            await message.answer("Категория не найдена.", reply_markup=admin_panel_keyboard())
+            return
+
+        lines = [x.strip() for x in raw_text.splitlines() if x.strip()]
+        added = 0
         for ln in lines:
-            phone, secret = (ln.split(":", 1) + [""])[:2] if ":" in ln else (ln, "")
-            CATALOG[key]["accounts"].append({"phone": phone.strip(), "secret": secret.strip()})
-        await message.answer(f"✅ Добавлено {len(lines)} шт.", reply_markup=back_to_main_keyboard())
+            if ":" in ln:
+                phone, secret = ln.split(":", 1)
+                phone, secret = phone.strip(), secret.strip()
+            else:
+                phone, secret = ln, ""
+            if phone:
+                item.setdefault("accounts", []).append({
+                    "id": f"ACC-{secrets.token_hex(2).upper()}",
+                    "phone": phone,
+                    "secret": secret,
+                })
+                added += 1
+
+        await message.answer(
+            f"✅ Загружено <b>{added} шт.</b> в <b>{item['title']}</b>.\n"
+            f"Всего в наличии: <b>{len(item['accounts'])} шт.</b>",
+            parse_mode="HTML",
+            reply_markup=admin_panel_keyboard(),
+        )
         return
 
-    raw_text = (message.text or "").strip().replace(",", ".")
+    if mode == "adm_new_cat" and is_admin(user_id):
+        WAITING_INPUT.pop(user_id, None)
+        parts = [p.strip() for p in raw_text.split("|")]
+        if len(parts) < 3:
+            await message.answer(
+                "Формат: <code>ключ|Название|Цена|Описание</code>",
+                parse_mode="HTML",
+                reply_markup=admin_panel_keyboard(),
+            )
+            return
+
+        cat_key, cat_title, price_raw = parts[0], parts[1], parts[2].replace(",", ".")
+        cat_desc = parts[3] if len(parts) > 3 else ""
+        try:
+            cat_price = float(price_raw)
+        except ValueError:
+            await message.answer("Цена должна быть числом.", reply_markup=admin_panel_keyboard())
+            return
+
+        CATALOG[cat_key] = {
+            "title": cat_title,
+            "price_rub": cat_price,
+            "description": cat_desc,
+            "accounts": [],
+        }
+        await message.answer(
+            f"✅ Добавлена позиция <b>{cat_title}</b> (<code>{cat_key}</code>) — <b>{cat_price:.2f} ₽</b>.",
+            parse_mode="HTML",
+            reply_markup=admin_panel_keyboard(),
+        )
+        return
+
+    norm_num = raw_text.replace(",", ".")
 
     if mode == "waiting_stars":
-        if not raw_text.isdigit():
+        if not norm_num.isdigit():
             await message.answer(
                 "Введите целое число звёзд, например: <code>15</code>",
                 parse_mode="HTML",
             )
             return
 
-        stars_amount = int(raw_text)
+        stars_amount = int(norm_num)
         if stars_amount < 1 or stars_amount > 100000:
             await message.answer("Укажите число звёзд от 1 до 100000.")
             return
@@ -520,7 +695,7 @@ async def handle_deposit_amount_input(message: Message):
 
     if mode == "waiting_ton":
         try:
-            ton_amount = round(float(raw_text), 4)
+            ton_amount = round(float(norm_num), 4)
         except ValueError:
             await message.answer(
                 "Введите корректную сумму в TON, например: <code>0.5</code>",
@@ -587,7 +762,15 @@ async def cb_check_ton_deposit(callback: CallbackQuery):
         parse_mode="HTML",
         reply_markup=back_to_main_keyboard(),
     )
-    await notify_admin(callback.bot, f"💎 Пополнение TON: <code>{user_id}</code> +{added_ton} TON ({new_rub:.2f} ₽)")
+
+    uname = f"@{callback.from_user.username}" if callback.from_user.username else "без юзернейма"
+    await notify_admin(
+        callback.bot,
+        f"💎 <b>Пополнение TON!</b>\n"
+        f"Юзер: {uname} (<code>{user_id}</code>)\n"
+        f"Начислено: <b>+{added_ton} TON</b>\n"
+        f"Баланс: <b>{new_rub:.2f} ₽</b>",
+    )
 
 
 @dp.callback_query(F.data == "cancel_deposit")
@@ -632,7 +815,15 @@ async def on_successful_payment(message: Message):
             parse_mode="HTML",
             reply_markup=back_to_main_keyboard(),
         )
-        await notify_admin(message.bot, f"⭐ Пополнение Stars: <code>{user_id}</code> +{added_stars} ⭐ ({new_rub:.2f} ₽)")
+
+        uname = f"@{message.from_user.username}" if message.from_user.username else "без юзернейма"
+        await notify_admin(
+            message.bot,
+            f"⭐ <b>Пополнение Stars!</b>\n"
+            f"Юзер: {uname} (<code>{user_id}</code>)\n"
+            f"Начислено: <b>+{added_stars} ⭐</b>\n"
+            f"Баланс: <b>{new_rub:.2f} ₽</b>",
+        )
 
 
 @dp.callback_query(F.data == "menu_rules")
@@ -662,16 +853,6 @@ async def cb_menu_reviews(callback: CallbackQuery):
     await callback.answer()
 
 
-@dp.callback_query(F.data.startswith("buy:"))
-async def cb_buy(callback: CallbackQuery):
-    await callback.answer("Сейчас нет товаров в наличии", show_alert=True)
-
-
-@dp.callback_query(F.data.startswith("check:"))
-async def cb_check_payment(callback: CallbackQuery):
-    await callback.answer("Заказ недоступен", show_alert=True)
-
-
 @dp.callback_query(F.data == "cancel")
 async def cb_cancel(callback: CallbackQuery):
     PENDING_ORDERS.pop(callback.from_user.id, None)
@@ -699,4 +880,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-```[cite: 1]
