@@ -98,4 +98,47 @@ async def cb_check_payment(callback: CallbackQuery):
         PENDING_ORDERS.pop(user_id, None)
         await callback.message.edit_text(
             "Товар закончился. Напиши в поддержку.",
-            reply_
+            reply_markup=catalog_keyboard(),
+        )
+        await callback.answer()
+        return
+
+    delivered_item = item["stock"].pop(0)
+    PENDING_ORDERS.pop(user_id, None)
+    PURCHASE_HISTORY.setdefault(user_id, []).append(f"{item['title']}: {delivered_item}")
+
+    await callback.message.edit_text(
+        f"Оплата подтверждена! Ваш товар:\n<code>{delivered_item}</code>",
+        parse_mode="HTML",
+        reply_markup=catalog_keyboard(),
+    )
+    await callback.answer("Товар выдан!")
+
+
+@dp.callback_query(F.data == "cancel")
+async def cb_cancel(callback: CallbackQuery):
+    PENDING_ORDERS.pop(callback.from_user.id, None)
+    await callback.message.edit_text("Заказ отменён.", reply_markup=catalog_keyboard())
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "history")
+async def cb_history(callback: CallbackQuery):
+    orders = PURCHASE_HISTORY.get(callback.from_user.id, [])
+    if not orders:
+        text = "У вас пока нет покупок."
+    else:
+        text = "<b>Ваши покупки:</b>\n" + "\n".join(f"• <code>{o}</code>" for o in orders)
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=catalog_keyboard())
+    await callback.answer()
+
+
+async def main():
+    if not BOT_TOKEN:
+        raise RuntimeError("Не задан BOT_TOKEN в переменных окружения")
+    bot = Bot(token=BOT_TOKEN)
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
