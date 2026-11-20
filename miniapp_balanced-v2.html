@@ -66,7 +66,7 @@
     }
     .card h2 { font-size: 20px; margin-bottom: 6px; }
     .sub { color: var(--muted); font-size: 13px; line-height: 1.4; }
-    .search {
+    .search, .custom-input {
       width: 100%;
       background: var(--card-2);
       border: 1px solid var(--border);
@@ -74,9 +74,10 @@
       padding: 12px 14px;
       color: var(--text);
       font-size: 15px;
-      margin-bottom: 12px;
       outline: none;
     }
+    .search { margin-bottom: 12px; }
+    .custom-input { margin-bottom: 10px; }
     .lot {
       background: var(--card);
       border: 1px solid var(--border);
@@ -128,7 +129,7 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .preset {
       background: var(--card-2);
@@ -151,8 +152,9 @@
       padding: 10px 12px;
       font-size: 12px;
       word-break: break-all;
-      color: var(--muted);
-      margin-bottom: 12px;
+      color: var(--text);
+      margin-bottom: 10px;
+      user-select: all;
     }
     .profile-row {
       display: flex;
@@ -266,6 +268,15 @@
           <button class="preset" onclick="selectPreset(25, this)">25 ⭐</button>
           <button class="preset" onclick="selectPreset(50, this)">50 ⭐</button>
         </div>
+        <input
+          class="custom-input"
+          id="customStarsInput"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="Введи своё число звёзд (например, 15)"
+          oninput="onCustomInput('stars')"
+        />
         <div class="sub" id="starsRateHint" style="margin-bottom:10px;">Курс: 1 ⭐ = 1.6 ₽</div>
       </div>
 
@@ -275,6 +286,15 @@
           <button class="preset" onclick="selectPreset(1, this)">1 TON</button>
           <button class="preset" onclick="selectPreset(2, this)">2 TON</button>
         </div>
+        <input
+          class="custom-input"
+          id="customTonInput"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="Введи свою сумму в TON (например, 0.25)"
+          oninput="onCustomInput('ton')"
+        />
         <div class="wallet-box" id="walletAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
         <div class="sub" id="tonRateHint" style="margin-bottom:10px;">Курс: 1 TON = 450 ₽</div>
       </div>
@@ -372,9 +392,11 @@
       document.getElementById("tonBox").classList.toggle("hidden", method !== "ton");
 
       if (method === "stars") {
+        document.getElementById("customStarsInput").value = "";
         selectedAmount = 10;
         document.querySelectorAll("#starsBox .preset").forEach((b, i) => b.classList.toggle("active", i === 0));
       } else {
+        document.getElementById("customTonInput").value = "";
         selectedAmount = 0.5;
         document.querySelectorAll("#tonBox .preset").forEach((b, i) => b.classList.toggle("active", i === 0));
       }
@@ -382,19 +404,57 @@
     }
 
     function selectPreset(val, btnEl) {
-      selectedAmount = val;
+      selectedAmount = Number(val);
       const boxId = payMethod === "stars" ? "#starsBox" : "#tonBox";
       document.querySelectorAll(`${boxId} .preset`).forEach((b) => b.classList.remove("active"));
       if (btnEl) btnEl.classList.add("active");
+      if (payMethod === "stars") {
+        document.getElementById("customStarsInput").value = "";
+      } else {
+        document.getElementById("customTonInput").value = "";
+      }
       updateDepositButton();
     }
 
+    function onCustomInput(method) {
+      const inp = document.getElementById(method === "stars" ? "customStarsInput" : "customTonInput");
+      const raw = String(inp.value || "").replace(",", ".").trim();
+      const num = parseFloat(raw);
+      const boxId = method === "stars" ? "#starsBox" : "#tonBox";
+      if (!isNaN(num) && num > 0) {
+        document.querySelectorAll(`${boxId} .preset`).forEach((b) => b.classList.remove("active"));
+        selectedAmount = method === "stars" ? Math.floor(num) : num;
+      } else {
+        selectedAmount = method === "stars" ? 10 : 0.5;
+      }
+      updateDepositButton();
+    }
+
+    function getCurrentAmount() {
+      if (payMethod === "stars") {
+        const raw = String(document.getElementById("customStarsInput").value || "").trim();
+        if (raw) {
+          const v = parseInt(raw, 10);
+          return isNaN(v) ? 0 : v;
+        }
+        return parseInt(selectedAmount, 10) || 0;
+      } else {
+        const raw = String(document.getElementById("customTonInput").value || "").replace(",", ".").trim();
+        if (raw) {
+          const v = parseFloat(raw);
+          return isNaN(v) ? 0 : v;
+        }
+        return parseFloat(selectedAmount) || 0;
+      }
+    }
+
     function updateDepositButton() {
+      const amt = getCurrentAmount();
       const btn = document.getElementById("depositSubmitBtn");
       if (payMethod === "stars") {
-        btn.textContent = `ПОПОЛНИТЬ НА ${selectedAmount} ⭐`;
+        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} ⭐` : "УКАЖИТЕ ЧИСЛО ЗВЁЗД";
       } else {
-        btn.textContent = `ПОПОЛНИТЬ НА ${selectedAmount} TON`;
+        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} TON` : "УКАЖИТЕ СУММУ TON";
       }
     }
 
@@ -469,7 +529,7 @@
           showBanner((data && data.error) || "Не удалось получить данные с сервера", "err");
         }
       } catch (err) {
-        showBanner("Нет связи с сервером бота на Render. Проверь URL API_BASE и деплой.", "err");
+        showBanner("Нет связи с сервером бота на Render.", "err");
         renderUI();
       }
     }
@@ -500,6 +560,12 @@
 
     async function submitDeposit() {
       hideBanner();
+      const amt = getCurrentAmount();
+      if (!amt || amt <= 0) {
+        showBanner("Введи сумму больше нуля", "err");
+        return;
+      }
+
       const btn = document.getElementById("depositSubmitBtn");
       btn.disabled = true;
       try {
@@ -509,7 +575,7 @@
           body: JSON.stringify({
             user_id: userId,
             method: payMethod,
-            amount: selectedAmount,
+            amount: amt,
             username
           })
         });
