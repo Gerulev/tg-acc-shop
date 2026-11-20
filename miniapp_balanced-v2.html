@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MiniApp — Магазин</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0c0608;
+      --card: #160c10;
+      --card-2: #201117;
+      --line: #341a24;
+      --txt: #fff7f8;
+      --sub: #b48c96;
+      --rose: #e11d48;
+      --rose-soft: rgba(225, 29, 72, 0.16);
+      --pill: #f6f1f2;
+      --pill-txt: #14070b;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 12px 12px 98px;
+      background: radial-gradient(circle at top, #260b13 0%, var(--bg) 260px);
+      color: var(--txt);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 468px;
+      margin: 0 auto;
+    }
+
+    .head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 2px 12px;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .logo-mark {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #9f1239, var(--rose));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .logo-name {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .bal-pill {
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 7px 11px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--txt);
+      cursor: pointer;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .hero-card {
+      background: linear-gradient(120deg, rgba(159, 18, 57, 0.35), rgba(22, 12, 16, 0.96));
+      border: 1px solid rgba(225, 29, 72, 0.35);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .hero-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .hero-sub {
+      font-size: 12.5px;
+      color: #ffd5dc;
+    }
+
+    .search {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--txt);
+      font-size: 13.5px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    .goods-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      padding: 12px 13px;
+      margin-bottom: 8px;
+    }
+
+    .goods-title {
+      font-size: 14.5px;
+      font-weight: 800;
+    }
+
+    .goods-desc {
+      font-size: 12px;
+      color: var(--sub);
+      margin-top: 2px;
+    }
+
+    .goods-price {
+      font-size: 15px;
+      font-weight: 800;
+      text-align: right;
+      margin-bottom: 5px;
+    }
+
+    .btn-buy {
+      background: var(--pill);
+      color: var(--pill-txt);
+      border: 0;
+      border-radius: 9px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 10px 0 12px;
+    }
+
+    .sum-btn {
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      color: var(--txt);
+      border-radius: 11px;
+      padding: 10px 6px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .sum-btn.active {
+      background: var(--pill);
+      color: var(--pill-txt);
+      border-color: var(--pill);
+    }
+
+    .btn-main {
+      width: 100%;
+      background: var(--pill);
+      color: var(--pill-txt);
+      border: 0;
+      border-radius: 13px;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .profile-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .ava {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--rose-soft);
+      border: 1px solid rgba(251, 113, 133, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .stat-box {
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-box b {
+      display: block;
+      font-size: 17px;
+    }
+
+    .stat-box span {
+      font-size: 11.5px;
+      color: var(--sub);
+    }
+
+    .dock {
+      position: fixed;
+      left: 50%;
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      width: calc(100% - 20px);
+      max-width: 456px;
+      background: rgba(22, 11, 15, 0.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 6px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      z-index: 9999;
+      pointer-events: auto;
+    }
+
+    .dock-btn {
+      background: transparent;
+      border: 0;
+      border-radius: 13px;
+      padding: 9px 4px;
+      min-height: 46px;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      pointer-events: auto;
+    }
+
+    .dock-btn * {
+      pointer-events: none;
+    }
+
+    .dock-btn.active {
+      background: var(--pill);
+      color: var(--pill-txt);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      background: #290c14;
+      border: 1px solid rgba(251, 113, 133, 0.5);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      display: none;
+      z-index: 10000;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .toast.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="head">
+      <div class="logo-wrap">
+        <div class="logo-mark">★</div>
+        <div class="logo-name">MiniApp Shop</div>
+      </div>
+      <button type="button" class="bal-pill" onclick="goPage('deposit')">👛 <span id="hdr-bal">500 ₽</span></button>
+    </div>
+
+    <div id="page-shop" class="page active">
+      <div class="hero-card">
+        <div class="hero-title">Каталог позиций</div>
+        <div class="hero-sub">Аккуратный каркас с поиском, пополнением и историей</div>
+      </div>
+
+      <input type="text" class="search" id="q" placeholder="Поиск по каталогу..." oninput="drawGoods()" />
+
+      <div id="goods-list"></div>
+    </div>
+
+    <div id="page-deposit" class="page">
+      <div class="card">
+        <div style="font-size:15px;font-weight:800;">Пополнение баланса</div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:3px;">Текущий баланс: <b id="dep-bal">500 ₽</b></div>
+
+        <div class="grid-3">
+          <button type="button" class="sum-btn" onclick="pickAmount(200, this)">200 ₽</button>
+          <button type="button" class="sum-btn active" onclick="pickAmount(500, this)">500 ₽</button>
+          <button type="button" class="sum-btn" onclick="pickAmount(1000, this)">1000 ₽</button>
+        </div>
+
+        <button type="button" class="btn-main" onclick="topUp()">ПОПОЛНИТЬ НА <span id="topup-val">500</span> ₽</button>
+      </div>
+    </div>
+
+    <div id="page-profile" class="page">
+      <div class="card">
+        <div class="profile-top">
+          <div class="ava" id="ava-let">U</div>
+          <div>
+            <div style="font-size:17px;font-weight:800;" id="u-name">Пользователь</div>
+            <div style="font-size:12px;color:var(--sub);" id="u-tag">@user</div>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-box">
+            <b id="cnt-orders">0</b>
+            <span>Покупок</span>
+          </div>
+          <div class="stat-box">
+            <b id="cur-bal">500 ₽</b>
+            <span>Баланс</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:800;margin-bottom:6px;">История заказов</div>
+        <div id="orders-list" style="font-size:12.5px;color:var(--sub);">Пока покупок нет.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="dock">
+    <button type="button" class="dock-btn active" data-p="shop">🏪 Магазин</button>
+    <button type="button" class="dock-btn" data-p="deposit">👛 Пополнить</button>
+    <button type="button" class="dock-btn" data-p="profile">👤 Профиль</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      try { tg.ready(); tg.expand(); } catch (_) {}
+    }
+
+    const tgU = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+    const uName = tgU && tgU.first_name ? tgU.first_name : "Пользователь";
+    const uTag = tgU && tgU.username ? "@" + tgU.username : "@user";
+
+    let bal = 500;
+    let amount = 500;
+    const orders = [];
+
+    const goods = [
+      { id: "a1", title: "Лот А — Архивный профиль", desc: "Код входа и пароль 2FA", price: 250 },
+      { id: "b2", title: "Лот Б — Региональный профиль", desc: "Быстрая выдача после оплаты", price: 160 },
+      { id: "c3", title: "Лот В — Проверенный профиль", desc: "Готов к работе сразу", price: 210 }
+    ];
+
+    function notify(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(window.__toastT);
+      window.__toastT = setTimeout(() => t.classList.remove("show"), 2200);
+    }
+
+    function goPage(p) {
+      document.querySelectorAll(".page").forEach((el) => el.classList.remove("active"));
+      const target = document.getElementById("page-" + p);
+      if (target) target.classList.add("active");
+
+      document.querySelectorAll(".dock-btn").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-p") === p);
+      });
+      refresh();
+    }
+
+    document.querySelectorAll(".dock-btn").forEach((btn) => {
+      btn.addEventListener("click", () => goPage(btn.getAttribute("data-p")));
+    });
+
+    function pickAmount(val, el) {
+      amount = val;
+      document.getElementById("topup-val").textContent = String(val);
+      document.querySelectorAll(".sum-btn").forEach((b) => b.classList.remove("active"));
+      if (el) el.classList.add("active");
+    }
+
+    function topUp() {
+      bal += amount;
+      refresh();
+      notify("Баланс пополнен на " + amount + " ₽");
+    }
+
+    function buyGood(id) {
+      const item = goods.find((x) => x.id === id);
+      if (!item) return;
+      if (bal < item.price) {
+        notify("Не хватает баланса");
+        return;
+      }
+      bal -= item.price;
+      orders.unshift(item.title + " — " + item.price + " ₽");
+      refresh();
+      notify("Оформлено: " + item.title);
+    }
+
+    function drawGoods() {
+      const query = (document.getElementById("q").value || "").trim().toLowerCase();
+      const box = document.getElementById("goods-list");
+      const list = goods.filter(
+        (g) => !query || g.title.toLowerCase().includes(query) || g.desc.toLowerCase().includes(query)
+      );
+      box.innerHTML = list
+        .map(
+          (g) => `<div class="goods-item">
+            <div>
+              <div class="goods-title">${g.title}</div>
+              <div class="goods-desc">${g.desc}</div>
+            </div>
+            <div>
+              <div class="goods-price">${g.price} ₽</div>
+              <button type="button" class="btn-buy" onclick="buyGood('${g.id}')">Купить</button>
+            </div>
+          </div>`
+        )
+        .join("");
+    }
+
+    function refresh() {
+      document.getElementById("hdr-bal").textContent = bal + " ₽";
+      document.getElementById("dep-bal").textContent = bal + " ₽";
+      document.getElementById("cur-bal").textContent = bal + " ₽";
+      document.getElementById("cnt-orders").textContent = String(orders.length);
+      document.getElementById("u-name").textContent = uName;
+      document.getElementById("u-tag").textContent = uTag;
+      document.getElementById("ava-let").textContent = uName.charAt(0).toUpperCase() || "U";
+      document.getElementById("orders-list").innerHTML = orders.length
+        ? orders.map((o) => "• " + o).join("<br/>")
+        : "Пока покупок нет.";
+    }
+
+    drawGoods();
+    refresh();
+  </script>
+</body>
+</html>
