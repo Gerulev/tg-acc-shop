@@ -857,4 +857,3 @@ async def handle_deposit_amount_input(message: Message):
 
     if mode == "adm_new_cat" and is_admin(user_id):
         WAITING_INPUT.pop(user_id, None)
-        parts = p.strip() for p
