@@ -40,14 +40,15 @@ CATALOG = {
     },
 }
 
-STAR_PACKAGES = {
-    "stars_10": {"stars": 10, "label": "10 ⭐"},
-    "stars_25": {"stars": 25, "label": "25 ⭐"},
-    "stars_50": {"stars": 50, "label": "50 ⭐"},
-}
+# user_id -> "waiting_stars" | "waiting_ton"
+WAITING_INPUT: dict[int, str] = {}
+
+# user_id -> {"comment": str, "amount_ton": float, "created_at": int}
+PENDING_DEPOSITS: dict[int, dict] = {}
 
 # user_id -> {"item_key": str, "comment": str, "amount_ton": float, "created_at": int}
 PENDING_ORDERS: dict[int, dict] = {}
+
 PURCHASE_HISTORY: dict[int, list[str]] = {}
 USER_STARS_BALANCE: dict[int, int] = {}
 USER_TON_BALANCE: dict[int, float] = {}
@@ -82,19 +83,25 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def deposit_keyboard() -> InlineKeyboardMarkup:
-    rows = []
-    for pkg_key, pkg in STAR_PACKAGES.items():
-        rows.append(
+def deposit_choice_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
             [
-                InlineKeyboardButton(
-                    text=f"⭐ Пополнить на {pkg['label']}",
-                    callback_data=f"stars_pay:{pkg_key}",
-                )
-            ]
-        )
-    rows.append([InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
+                InlineKeyboardButton(text="⭐ Через звёзды", callback_data="dep_method:stars"),
+                InlineKeyboardButton(text="💎 Через TON", callback_data="dep_method:ton"),
+            ],
+            [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")],
+        ]
+    )
+
+
+def deposit_ton_check_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Я оплатил (проверить TON)", callback_data="check_ton_deposit")],
+            [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_deposit")],
+        ]
+    )
 
 
 def catalog_keyboard() -> InlineKeyboardMarkup:
@@ -131,7 +138,6 @@ def extract_comment_from_in_msg(in_msg: dict) -> str:
     if isinstance(b64_body, str) and b64_body:
         try:
             raw = base64.b64decode(b64_body)
-            # В простых текстовых комментариях TON первые 4 байта — opcode (обычно 0)
             text_part = raw[4:] if len(raw) > 4 else raw
             decoded = text_part.decode("utf-8", errors="ignore").strip()
             if decoded:
@@ -181,7 +187,6 @@ async def verify_ton_payment(expected_ton: float, expected_comment: str, min_uti
 
         in_msg = tx.get("in_msg") or {}
         value_nano = int(in_msg.get("value") or 0)
-        # Допускаем небольшую погрешность на округление в 0.001 TON
         if value_nano < int(expected_nano * 0.998):
             continue
 
@@ -212,6 +217,7 @@ def get_welcome_text(user_first_name: str) -> str:
 
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
+    WAITING_INPUT.pop(message.from_user.id, None)
     first_name = message.from_user.first_name or "Покупатель"
     await message.answer(
         get_welcome_text(first_name),
@@ -222,6 +228,7 @@ async def cmd_start(message: Message):
 
 @dp.callback_query(F.data == "back_main")
 async def cb_back_main(callback: CallbackQuery):
+    WAITING_INPUT.pop(callback.from_user.id, None)
     first_name = callback.from_user.first_name or "Покупатель"
     await callback.message.edit_text(
         get_welcome_text(first_name),
@@ -233,6 +240,7 @@ async def cb_back_main(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "menu_catalog")
 async def cb_menu_catalog(callback: CallbackQuery):
+    WAITING_INPUT.pop(callback.from_user.id, None)
     text = "🛍 <b>Каталог товаров</b>\n\nВыбери интересующую позицию для покупки:"
     await callback.message.edit_text(
         text, parse_mode="HTML", reply_markup=catalog_keyboard()
@@ -242,15 +250,18 @@ async def cb_menu_catalog(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "menu_profile")
 async def cb_menu_profile(callback: CallbackQuery):
+    WAITING_INPUT.pop(callback.from_user.id, None)
     user_id = callback.from_user.id
     rub_balance = get_rub_balance(user_id)
     stars_balance = USER_STARS_BALANCE.get(user_id, 0)
+    ton_balance = USER_TON_BALANCE.get(user_id, 0.0)
     orders = PURCHASE_HISTORY.get(user_id, [])
 
     text = (
         f"👤 <b>Ваш профиль</b>\n\n"
         f"🆔 <b>ID:</b> <code>{user_id}</code>\n"
-        f"💰 <b>Баланс:</b> <b>{rub_balance:.2f} ₽</b> (⭐ {stars_balance})\n"
+        f"💰 <b>Баланс:</b> <b>{rub_balance:.2f} ₽</b>\n"
+        f"<i>(⭐ {stars_balance} • 💎 {ton_balance:.4f} TON)</i>\n"
         f"🛒 <b>Куплено товаров:</b> {len(orders)} шт.\n"
     )
     if orders:
@@ -264,39 +275,168 @@ async def cb_menu_profile(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "menu_deposit")
 async def cb_menu_deposit(callback: CallbackQuery):
+    WAITING_INPUT.pop(callback.from_user.id, None)
     user_id = callback.from_user.id
     rub_balance = get_rub_balance(user_id)
-    stars_balance = USER_STARS_BALANCE.get(user_id, 0)
+
     text = (
-        "💳 <b>Пополнение баланса через Telegram Stars</b>\n\n"
-        f"Текущий баланс: <b>{rub_balance:.2f} ₽</b> (⭐ {stars_balance})\n"
-        "Выбери пакет звёзд ниже — откроется окно оплаты в Telegram:"
+        "💳 <b>Пополнение баланса</b>\n\n"
+        f"Текущий баланс: <b>{rub_balance:.2f} ₽</b>\n\n"
+        "Выбери способ пополнения:"
     )
     await callback.message.edit_text(
-        text, parse_mode="HTML", reply_markup=deposit_keyboard()
+        text, parse_mode="HTML", reply_markup=deposit_choice_keyboard()
     )
     await callback.answer()
 
 
-@dp.callback_query(F.data.startswith("stars_pay:"))
-async def cb_stars_pay(callback: CallbackQuery, bot: Bot):
-    pkg_key = callback.data.split(":", 1)[1]
-    pkg = STAR_PACKAGES.get(pkg_key)
-    if not pkg:
-        await callback.answer("Пакет не найден", show_alert=True)
+@dp.callback_query(F.data == "dep_method:stars")
+async def cb_dep_method_stars(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    WAITING_INPUT[user_id] = "waiting_stars"
+
+    text = (
+        "⭐ <b>Пополнение через звёзды (XTR)</b>\n\n"
+        "Напиши в чат <b>целое число звёзд</b>, на которое хочешь пополнить баланс.\n"
+        "Например: <code>10</code> или <code>50</code>"
+    )
+    await callback.message.edit_text(
+        text, parse_mode="HTML", reply_markup=back_to_main_keyboard()
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "dep_method:ton")
+async def cb_dep_method_ton(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    WAITING_INPUT[user_id] = "waiting_ton"
+
+    text = (
+        "💎 <b>Пополнение через TON</b>\n\n"
+        "Напиши в чат <b>сумму в TON</b>, на которую хочешь пополнить баланс.\n"
+        "Например: <code>0.5</code> или <code>2</code>"
+    )
+    await callback.message.edit_text(
+        text, parse_mode="HTML", reply_markup=back_to_main_keyboard()
+    )
+    await callback.answer()
+
+
+@dp.message(F.text & ~F.text.startswith("/"))
+async def handle_deposit_amount_input(message: Message):
+    user_id = message.from_user.id
+    mode = WAITING_INPUT.get(user_id)
+    if not mode:
         return
 
-    stars_amount = pkg["stars"]
-    await bot.send_invoice(
-        chat_id=callback.from_user.id,
-        title=f"Пополнение баланса ({pkg['label']})",
-        description=f"Зачисление {stars_amount} звёзд на ваш баланс в магазине.",
-        payload=f"deposit_stars:{stars_amount}",
-        provider_token="",
-        currency="XTR",
-        prices=[LabeledPrice(label=pkg["label"], amount=stars_amount)],
+    raw_text = (message.text or "").strip().replace(",", ".")
+
+    if mode == "waiting_stars":
+        if not raw_text.isdigit():
+            await message.answer(
+                "Введите целое число звёзд, например: <code>15</code>",
+                parse_mode="HTML",
+            )
+            return
+
+        stars_amount = int(raw_text)
+        if stars_amount < 1 or stars_amount > 100000:
+            await message.answer("Укажите число звёзд от 1 до 100000.")
+            return
+
+        WAITING_INPUT.pop(user_id, None)
+        await message.bot.send_invoice(
+            chat_id=user_id,
+            title=f"Пополнение баланса ({stars_amount} ⭐)",
+            description=f"Зачисление {stars_amount} звёзд на ваш баланс.",
+            payload=f"deposit_stars:{stars_amount}",
+            provider_token="",
+            currency="XTR",
+            prices=[LabeledPrice(label=f"{stars_amount} ⭐", amount=stars_amount)],
+        )
+        return
+
+    if mode == "waiting_ton":
+        try:
+            ton_amount = round(float(raw_text), 4)
+        except ValueError:
+            await message.answer(
+                "Введите корректную сумму в TON, например: <code>0.5</code>",
+                parse_mode="HTML",
+            )
+            return
+
+        if ton_amount <= 0 or ton_amount > 100000:
+            await message.answer("Сумма в TON должна быть больше 0.")
+            return
+
+        WAITING_INPUT.pop(user_id, None)
+        comment = f"DEP{user_id}{secrets.token_hex(2).upper()}"
+        PENDING_DEPOSITS[user_id] = {
+            "comment": comment,
+            "amount_ton": ton_amount,
+            "created_at": int(time.time()),
+        }
+
+        await message.answer(
+            "💎 <b>Счёт на пополнение в TON создан</b>\n\n"
+            f"<b>Сумма:</b> <code>{ton_amount}</code> TON\n"
+            f"<b>Кошелёк:</b>\n<code>{CRYPTO_WALLET}</code>\n"
+            f"<b>Обязательный комментарий:</b>\n<code>{comment}</code>\n\n"
+            "Переведи точную сумму с указанным комментарием и нажми кнопку проверки ниже.",
+            parse_mode="HTML",
+            reply_markup=deposit_ton_check_keyboard(),
+        )
+
+
+@dp.callback_query(F.data == "check_ton_deposit")
+async def cb_check_ton_deposit(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    deposit = PENDING_DEPOSITS.get(user_id)
+    if not deposit:
+        await callback.answer("Заявка на пополнение не найдена", show_alert=True)
+        return
+
+    await callback.answer("Проверяем перевод в сети TON...")
+
+    paid = await verify_ton_payment(
+        expected_ton=deposit["amount_ton"],
+        expected_comment=deposit["comment"],
+        min_utime=deposit["created_at"],
     )
-    await callback.answer("Счёт на оплату звёздами отправлен!")
+
+    if not paid:
+        await callback.answer(
+            "Перевод пока не найден. Проверь сумму и комментарий и попробуй через 10–15 сек.",
+            show_alert=True,
+        )
+        return
+
+    added_ton = float(deposit["amount_ton"])
+    PENDING_DEPOSITS.pop(user_id, None)
+    new_ton = round(USER_TON_BALANCE.get(user_id, 0.0) + added_ton, 4)
+    USER_TON_BALANCE[user_id] = new_ton
+    new_rub = get_rub_balance(user_id)
+
+    await callback.message.edit_text(
+        f"✅ <b>Пополнение в TON подтверждено!</b>\n\n"
+        f"Начислено: <b>+{added_ton} TON</b>\n"
+        f"Баланс: <b>{new_rub:.2f} ₽</b> <i>(💎 {new_ton:.4f} TON)</i>",
+        parse_mode="HTML",
+        reply_markup=main_menu_keyboard(),
+    )
+
+
+@dp.callback_query(F.data == "cancel_deposit")
+async def cb_cancel_deposit(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    WAITING_INPUT.pop(user_id, None)
+    PENDING_DEPOSITS.pop(user_id, None)
+    await callback.message.edit_text(
+        "Пополнение отменено.",
+        reply_markup=main_menu_keyboard(),
+    )
+    await callback.answer()
 
 
 @dp.pre_checkout_query()
@@ -325,7 +465,7 @@ async def on_successful_payment(message: Message):
         await message.answer(
             f"⭐️ <b>Оплата прошла успешно!</b>\n\n"
             f"Начислено: <b>+{added_stars} ⭐</b>\n"
-            f"Баланс: <b>{new_rub:.2f} ₽</b> (⭐ {new_stars})",
+            f"Баланс: <b>{new_rub:.2f} ₽</b> <i>(⭐ {new_stars})</i>",
             parse_mode="HTML",
             reply_markup=main_menu_keyboard(),
         )
