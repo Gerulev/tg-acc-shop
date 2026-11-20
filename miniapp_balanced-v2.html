@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>VelvetVault — Магазин</title>
+  <title>CrimsonGrid — Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: #0e070a;
-      --panel: #1b0d13;
-      --panel-2: #25121a;
-      --panel-3: #311722;
-      --line: #462030;
-      --ink: #fff7fa;
-      --sub: #be9aa9;
-      --btn: #ffffff;
-      --btn-ink: #17090f;
-      --rose: #e03156;
+      --bg: #0c0609;
+      --card: #190c12;
+      --card-2: #24111a;
+      --card-3: #301622;
+      --border: #441f2f;
+      --text: #fff6fa;
+      --muted: #bc96a6;
+      --white: #ffffff;
+      --dark: #15080e;
+      --crimson: #e12d53;
       --ok: #5be39b;
       --err: #ff5c77;
     }
@@ -25,209 +25,264 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      background: linear-gradient(180deg, #210c15 0%, var(--bg) 280px);
-      color: var(--ink);
+      background:
+        radial-gradient(circle at 50% -8%, rgba(225, 45, 83, 0.22), transparent 46%),
+        var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      padding: 14px 14px 96px;
+      padding: 12px 14px 100px;
     }
 
-    .top {
+    /* Стартовый экран загрузки */
+    .loader-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background:
+        radial-gradient(circle at 50% 32%, rgba(225, 45, 83, 0.28), transparent 55%),
+        #0b0508;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 24px;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    .loader-screen.done {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .loader-ring {
+      width: 74px;
+      height: 74px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #2d101c, #16070d);
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 0 40px rgba(225, 45, 83, 0.35);
+      display: grid;
+      place-items: center;
+      font-size: 30px;
+      font-weight: 900;
+      animation: floatLogo 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes floatLogo {
+      from { transform: translateY(0px) scale(0.98); }
+      to { transform: translateY(-5px) scale(1.03); }
+    }
+    .loader-brand {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+    }
+    .loader-caption {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .loader-track {
+      width: 190px;
+      height: 5px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .loader-fill {
+      height: 100%;
+      width: 45%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--crimson), #ffffff);
+      animation: runBar 1.1s ease-in-out infinite alternate;
+    }
+    @keyframes runBar {
+      from { transform: translateX(-20%); width: 45%; }
+      to { transform: translateX(95%); width: 55%; }
+    }
+
+    /* Шапка */
+    .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 14px;
+      gap: 8px;
+      margin-bottom: 12px;
     }
-
-    .logo {
+    .brand-box {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 9px;
     }
-
-    .logo-mark {
+    .brand-sq {
       width: 34px;
       height: 34px;
       border-radius: 11px;
-      background: linear-gradient(135deg, var(--rose), #7f142b);
+      background: linear-gradient(135deg, var(--crimson), #84142c);
       display: grid;
       place-items: center;
-      font-size: 15px;
       font-weight: 900;
+      font-size: 16px;
     }
-
-    .logo-name {
+    .brand-txt {
       font-size: 18px;
       font-weight: 800;
-      letter-spacing: 0.2px;
     }
-
-    .top-right {
+    .top-btns {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
-
-    .bal-box {
-      background: var(--panel-2);
-      border: 1px solid var(--line);
-      border-radius: 13px;
-      padding: 8px 12px;
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--ink);
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .sup-pill {
-      background: var(--panel-2);
-      border: 1px solid var(--line);
-      border-radius: 13px;
+    .pill-btn {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
       padding: 8px 11px;
       font-size: 13px;
-      font-weight: 700;
-      color: var(--ink);
+      font-weight: 800;
       cursor: pointer;
       white-space: nowrap;
     }
+    .pill-btn:active { transform: scale(0.97); }
 
-    .banner {
-      background: var(--panel-2);
-      border: 1px solid var(--line);
+    /* Баннер уведомлений */
+    .alert {
+      background: var(--card-2);
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 11px 13px;
       font-size: 13px;
       line-height: 1.45;
       margin-bottom: 12px;
     }
-    .banner.ok { border-color: rgba(91, 227, 155, 0.5); color: var(--ok); }
-    .banner.err { border-color: rgba(255, 92, 119, 0.5); color: var(--err); }
+    .alert.ok { border-color: rgba(91, 227, 155, 0.5); color: var(--ok); }
+    .alert.err { border-color: rgba(255, 92, 119, 0.5); color: var(--err); }
 
-    .intro-card {
-      background: linear-gradient(135deg, #271019 0%, #170a10 100%);
-      border: 1px solid var(--line);
-      border-left: 4px solid var(--rose);
-      border-radius: 16px;
-      padding: 14px 15px;
-      margin-bottom: 12px;
+    /* Шапка раздела и быстрые кнопки */
+    .hero {
+      background: linear-gradient(135deg, #28101a 0%, #160a10 100%);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 15px;
+      margin-bottom: 10px;
     }
-
-    .intro-title {
-      font-size: 20px;
+    .hero h1 {
+      font-size: 21px;
       font-weight: 900;
       margin-bottom: 4px;
     }
-
-    .intro-desc {
+    .hero p {
       font-size: 13px;
-      color: var(--sub);
-      line-height: 1.4;
+      color: var(--muted);
     }
-
-    .metrics {
+    .quick-actions {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       margin-bottom: 12px;
     }
-
-    .metric {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
+    .q-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 13px;
       padding: 10px 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
       text-align: center;
     }
+    .q-btn:active { background: var(--card-2); }
 
-    .metric-num {
-      font-size: 17px;
-      font-weight: 900;
+    .stats-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
     }
-
-    .metric-cap {
-      font-size: 11.5px;
-      color: var(--sub);
-      margin-top: 2px;
+    .st-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 6px;
+      text-align: center;
     }
+    .st-val { font-size: 17px; font-weight: 900; }
+    .st-lbl { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 
-    .field {
+    .input {
       width: 100%;
-      background: var(--panel);
-      border: 1px solid var(--line);
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 12px 14px;
-      color: var(--ink);
+      color: var(--text);
       font-size: 14.5px;
       outline: none;
       margin-bottom: 10px;
     }
-    .field:focus { border-color: var(--rose); }
+    .input:focus { border-color: var(--crimson); }
 
-    .filter-bar {
+    .chips {
       display: flex;
-      gap: 8px;
+      gap: 7px;
       overflow-x: auto;
       padding-bottom: 4px;
       margin-bottom: 10px;
       scrollbar-width: none;
     }
-    .filter-bar::-webkit-scrollbar { display: none; }
-
-    .f-btn {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      color: var(--sub);
-      border-radius: 11px;
-      padding: 8px 13px;
-      font-size: 13px;
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 12.5px;
       font-weight: 700;
       white-space: nowrap;
       cursor: pointer;
     }
-    .f-btn.active {
-      background: var(--btn);
-      color: var(--btn-ink);
-      border-color: var(--btn);
+    .chip.active {
+      background: var(--white);
+      color: var(--dark);
+      border-color: var(--white);
     }
 
-    .subbar {
+    .row-between {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 12px;
       font-size: 12.5px;
-      color: var(--sub);
+      color: var(--muted);
     }
-
-    .sort-box {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      color: var(--ink);
-      border-radius: 11px;
-      padding: 7px 10px;
+    .select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 8px 11px;
       font-size: 12.5px;
       font-weight: 700;
       outline: none;
     }
 
     .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 16px;
       padding: 14px;
       margin-bottom: 10px;
     }
-
-    .pos-card {
-      background: var(--panel);
-      border: 1px solid var(--line);
+    .item-card {
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 16px;
       padding: 14px;
       margin-bottom: 10px;
@@ -236,15 +291,14 @@
       justify-content: space-between;
       gap: 12px;
     }
+    .item-title { font-size: 15.5px; font-weight: 800; margin-bottom: 3px; }
+    .item-desc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+    .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex-shrink: 0; }
+    .item-price { font-size: 16px; font-weight: 900; }
 
-    .pos-title { font-size: 15.5px; font-weight: 800; margin-bottom: 3px; }
-    .pos-sub { font-size: 12.5px; color: var(--sub); line-height: 1.35; }
-    .pos-right { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex-shrink: 0; }
-    .pos-price { font-size: 16px; font-weight: 900; }
-
-    .btn-w {
-      background: var(--btn);
-      color: var(--btn-ink);
+    .btn-primary {
+      background: var(--white);
+      color: var(--dark);
       border: none;
       border-radius: 12px;
       padding: 9px 14px;
@@ -252,362 +306,379 @@
       font-weight: 800;
       cursor: pointer;
     }
-    .btn-w:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .btn-ghost {
-      width: 100%;
-      background: var(--panel-2);
-      color: var(--ink);
-      border: 1px solid var(--line);
-      border-radius: 13px;
-      padding: 11px 14px;
-      font-size: 13.5px;
+    .btn-sec {
+      background: var(--card-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 8px;
     }
 
-    .switch-2 {
+    .two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin: 12px 0;
     }
-
-    .sw-btn {
-      background: var(--panel-2);
-      border: 1px solid var(--line);
-      color: var(--sub);
+    .seg {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
       border-radius: 12px;
       padding: 10px;
       font-size: 13.5px;
       font-weight: 800;
       cursor: pointer;
     }
-    .sw-btn.active {
-      background: var(--btn);
-      color: var(--btn-ink);
-      border-color: var(--btn);
+    .seg.active {
+      background: var(--white);
+      color: var(--dark);
+      border-color: var(--white);
     }
 
-    .grid-3 {
+    .presets-4 {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
       margin-bottom: 10px;
     }
-
-    .amt-btn {
-      background: var(--panel-2);
-      border: 1px solid var(--line);
-      color: var(--ink);
-      border-radius: 12px;
-      padding: 10px 6px;
-      font-size: 13px;
+    .pre {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 11px;
+      padding: 9px 4px;
+      font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
     }
-    .amt-btn.active {
-      background: var(--panel-3);
-      border-color: var(--ink);
+    .pre.active {
+      background: var(--card-3);
+      border-color: var(--white);
     }
 
-    .addr-box {
-      background: var(--panel-2);
-      border: 1px solid var(--line);
+    .wallet-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--card-2);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 10px 12px;
-      font-size: 12px;
-      word-break: break-all;
       margin-bottom: 10px;
+    }
+    .wallet-addr {
+      font-size: 11.5px;
+      word-break: break-all;
       user-select: all;
     }
 
-    .user-head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .ava {
-      width: 48px;
-      height: 48px;
-      border-radius: 15px;
-      background: var(--panel-3);
-      border: 1px solid var(--line);
-      display: grid;
-      place-items: center;
-      font-size: 19px;
-      font-weight: 900;
-    }
-
-    .row-card {
-      background: var(--panel);
-      border: 1px solid var(--line);
+    .menu-tile {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
       border-radius: 15px;
       padding: 13px 14px;
-      margin-bottom: 9px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
+      text-align: left;
     }
+    .menu-tile:active { background: var(--card-2); }
 
-    .foot {
-      margin-top: 18px;
+    .footer-links {
+      margin-top: 16px;
       font-size: 12px;
-      color: var(--sub);
+      color: var(--muted);
       line-height: 1.65;
     }
-    .foot span {
-      color: var(--ink);
+    .footer-links span {
+      color: var(--text);
       text-decoration: underline;
       display: block;
       margin-top: 4px;
       cursor: pointer;
     }
 
-    .dock {
+    .bottom-bar {
       position: fixed;
       left: 0;
       right: 0;
       bottom: 0;
       background: #14090e;
-      border-top: 1px solid var(--line);
-      padding: 7px 8px 13px;
+      border-top: 1px solid var(--border);
+      padding: 7px 6px 13px;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
-      z-index: 40;
+      gap: 3px;
+      z-index: 50;
     }
-
-    .dock-btn {
+    .b-btn {
       background: transparent;
       border: none;
-      color: var(--sub);
+      color: var(--muted);
       border-radius: 12px;
       padding: 7px 2px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 3px;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       cursor: pointer;
     }
-    .dock-btn.active {
-      background: var(--panel-2);
-      color: var(--ink);
+    .b-btn.active {
+      background: var(--card-2);
+      color: var(--text);
     }
 
     .hidden { display: none; }
   </style>
 </head>
 <body>
-  <header class="top">
-    <div class="logo">
-      <div class="logo-mark">V</div>
-      <div class="logo-name">VelvetVault</div>
+  <!-- Экран загрузки -->
+  <div class="loader-screen" id="loaderScreen">
+    <div class="loader-ring">⚡</div>
+    <div class="loader-brand">CRIMSONGRID</div>
+    <div class="loader-caption">Загрузка магазина и баланса...</div>
+    <div class="loader-track"><div class="loader-fill"></div></div>
+    <button class="btn-sec" style="margin-top: 8px;" onclick="hideLoader()">Войти сразу</button>
+  </div>
+
+  <!-- Верхняя панель -->
+  <header class="topbar">
+    <div class="brand-box">
+      <div class="brand-sq">⚡</div>
+      <div class="brand-txt">CrimsonGrid</div>
     </div>
-    <div class="top-right">
-      <button class="bal-box" id="topBal" onclick="goTab('deposit')">0.00 ₽</button>
-      <button class="sup-pill" onclick="openSupport()">Поддержка</button>
+    <div class="top-btns">
+      <button class="pill-btn" id="topBal" onclick="openTab('deposit')">0.00 ₽</button>
+      <button class="pill-btn" onclick="openTab('support')">🆘 Чат</button>
+      <button class="pill-btn" onclick="syncAll()" title="Обновить">↻</button>
     </div>
   </header>
 
-  <div id="alertBox" class="banner hidden"></div>
+  <div id="alertBox" class="alert hidden"></div>
 
-  <section id="sec-shop">
-    <div class="intro-card">
-      <div class="intro-title">Магазин</div>
-      <div class="intro-desc">Актуальные позиции из бота и быстрая выдача заказов</div>
+  <!-- МАГАЗИН -->
+  <section id="tab-shop">
+    <div class="hero">
+      <h1>Каталог товаров</h1>
+      <p>Единый баланс в ₽, быстрая покупка и синхронизация с ботом</p>
     </div>
 
-    <div class="metrics">
-      <div class="metric">
-        <div class="metric-num" id="mStock">0</div>
-        <div class="metric-cap">в наличии</div>
+    <div class="quick-actions">
+      <button class="q-btn" onclick="openTab('deposit')">💳 Пополнить ₽</button>
+      <button class="q-btn" onclick="openTab('my')">📦 Мои заказы</button>
+      <button class="q-btn" onclick="openSupport()">💬 Поддержка</button>
+    </div>
+
+    <div class="stats-3">
+      <div class="st-box">
+        <div class="st-val" id="sStock">0</div>
+        <div class="st-lbl">в наличии</div>
       </div>
-      <div class="metric">
-        <div class="metric-num" id="mCats">0</div>
-        <div class="metric-cap">позиций</div>
+      <div class="st-box">
+        <div class="st-val" id="sCats">0</div>
+        <div class="st-lbl">позиций</div>
       </div>
-      <div class="metric">
-        <div class="metric-num" id="mBought">0</div>
-        <div class="metric-cap">заказов</div>
+      <div class="st-box">
+        <div class="st-val" id="sOrders">0</div>
+        <div class="st-lbl">покупок</div>
       </div>
     </div>
 
-    <input class="field" id="qInput" type="text" placeholder="Поиск по каталогу..." />
+    <input class="input" id="searchBox" type="text" placeholder="Поиск по названию или описанию..." />
 
-    <div class="filter-bar" id="fBar">
-      <button class="f-btn active" data-f="all" onclick="pickFilter('all', this)">Все</button>
-      <button class="f-btn" data-f="low" onclick="pickFilter('low', this)">До 300 ₽</button>
-      <button class="f-btn" data-f="high" onclick="pickFilter('high', this)">От 300 ₽</button>
+    <div class="chips" id="chipsRow">
+      <button class="chip active" data-f="all" onclick="setChip('all', this)">Все позиции</button>
+      <button class="chip" data-f="cheap" onclick="setChip('cheap', this)">До 250 ₽</button>
+      <button class="chip" data-f="mid" onclick="setChip('mid', this)">250–600 ₽</button>
+      <button class="chip" data-f="exp" onclick="setChip('exp', this)">От 600 ₽</button>
     </div>
 
-    <div class="subbar">
-      <span id="stockSummary">0 шт. • 0 поз.</span>
-      <select class="sort-box" id="sortSel" onchange="drawShop()">
-        <option value="std">По порядку</option>
-        <option value="asc">Сначала дешевле</option>
-        <option value="desc">Сначала дороже</option>
+    <div class="row-between">
+      <span id="counterTxt">0 шт. • 0 поз.</span>
+      <select class="select" id="sortBox" onchange="renderCatalog()">
+        <option value="default">По умолчанию</option>
+        <option value="price_asc">Сначала дешевле</option>
+        <option value="price_desc">Сначала дороже</option>
       </select>
     </div>
 
-    <div id="catalogBox"></div>
+    <div id="itemsContainer"></div>
   </section>
 
-  <section id="sec-my" class="hidden">
-    <div class="intro-card">
-      <div class="intro-title">Мои покупки</div>
-      <div class="intro-desc">Список оформленных заказов по твоему аккаунту</div>
+  <!-- МОИ ЗАКАЗЫ -->
+  <section id="tab-my" class="hidden">
+    <div class="hero">
+      <h1>Мои заказы</h1>
+      <p>Все выданные позиции по твоему профилю</p>
     </div>
-    <div class="card" id="myOrdersBox">
-      <div class="pos-sub">Заказов пока нет.</div>
+    <div class="quick-actions">
+      <button class="q-btn" onclick="openTab('shop')">🛍 В каталог</button>
+      <button class="q-btn" onclick="syncAll()">↻ Обновить</button>
+      <button class="q-btn" onclick="openSupport()">🆘 Помощь</button>
+    </div>
+    <div class="card" id="ordersContainer">
+      <div class="item-desc">Пока заказов нет.</div>
     </div>
   </section>
 
-  <section id="sec-deposit" class="hidden">
+  <!-- ПОПОЛНЕНИЕ -->
+  <section id="tab-deposit" class="hidden">
     <div class="card">
-      <div class="pos-title" style="font-size: 18px;">Пополнение в рублях (₽)</div>
-      <div class="pos-sub">Текущий баланс: <strong id="depBal" style="color: var(--ink);">0.00 ₽</strong>. Любой донат зачисляется сразу в ₽.</div>
+      <div class="item-title" style="font-size: 18px;">Пополнение баланса (₽)</div>
+      <div class="item-desc">Баланс сейчас: <strong id="depBal" style="color: var(--text);">0.00 ₽</strong>. Звёзды и TON сразу начисляются в ₽.</div>
 
-      <div class="switch-2">
-        <button class="sw-btn active" id="swStars" onclick="pickMethod('stars')">⭐ Звёзды → ₽</button>
-        <button class="sw-btn" id="swTon" onclick="pickMethod('ton')">💎 TON → ₽</button>
+      <div class="two-col">
+        <button class="seg active" id="segStars" onclick="setMethod('stars')">⭐ Звёзды → ₽</button>
+        <button class="seg" id="segTon" onclick="setMethod('ton')">💎 TON → ₽</button>
       </div>
 
-      <div id="boxStars">
-        <div class="grid-3">
-          <button class="amt-btn active" onclick="pickPreset(10, this)">10 ⭐</button>
-          <button class="amt-btn" onclick="pickPreset(25, this)">25 ⭐</button>
-          <button class="amt-btn" onclick="pickPreset(50, this)">50 ⭐</button>
+      <div id="panelStars">
+        <div class="presets-4">
+          <button class="pre active" onclick="setPreset(10, this)">10 ⭐</button>
+          <button class="pre" onclick="setPreset(25, this)">25 ⭐</button>
+          <button class="pre" onclick="setPreset(50, this)">50 ⭐</button>
+          <button class="pre" onclick="setPreset(100, this)">100 ⭐</button>
         </div>
-        <input class="field" id="inpStars" type="number" min="1" step="1" placeholder="Своё число звёзд (например, 15)" oninput="onCustom('stars')" />
-        <div class="pos-sub" id="noteStars" style="margin-bottom: 10px;">1 ⭐ = 1.6 ₽</div>
+        <input class="input" id="customStars" type="number" min="1" step="1" placeholder="Своё число звёзд (например, 35)" oninput="onCustom('stars')" />
+        <div class="item-desc" id="rateStars" style="margin-bottom: 10px;">Курс: 1 ⭐ = 1.6 ₽</div>
       </div>
 
-      <div id="boxTon" class="hidden">
-        <div class="grid-3">
-          <button class="amt-btn active" onclick="pickPreset(0.5, this)">0.5 TON</button>
-          <button class="amt-btn" onclick="pickPreset(1, this)">1 TON</button>
-          <button class="amt-btn" onclick="pickPreset(2, this)">2 TON</button>
+      <div id="panelTon" class="hidden">
+        <div class="presets-4">
+          <button class="pre active" onclick="setPreset(0.25, this)">0.25</button>
+          <button class="pre" onclick="setPreset(0.5, this)">0.5</button>
+          <button class="pre" onclick="setPreset(1, this)">1 TON</button>
+          <button class="pre" onclick="setPreset(3, this)">3 TON</button>
         </div>
-        <input class="field" id="inpTon" type="number" min="0.01" step="0.01" placeholder="Своя сумма TON (например, 0.25)" oninput="onCustom('ton')" />
-        <div class="addr-box" id="tonAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
-        <div class="pos-sub" id="noteTon" style="margin-bottom: 10px;">1 TON = 450 ₽</div>
+        <input class="input" id="customTon" type="number" min="0.01" step="0.01" placeholder="Своя сумма TON (например, 0.75)" oninput="onCustom('ton')" />
+        <div class="wallet-row">
+          <div class="wallet-addr" id="walletAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
+          <button class="btn-sec" onclick="copyWallet()">Копировать</button>
+        </div>
+        <div class="item-desc" id="rateTon" style="margin-bottom: 10px;">Курс: 1 TON = 450 ₽</div>
       </div>
 
-      <button class="btn-w" id="doDepBtn" style="width: 100%; padding: 13px;" onclick="sendDeposit()">
+      <button class="btn-primary" id="submitDepBtn" style="width: 100%; padding: 13px;" onclick="runDeposit()">
         ПОПОЛНИТЬ НА 10 ⭐ (В ₽)
       </button>
     </div>
   </section>
 
-  <section id="sec-profile" class="hidden">
+  <!-- ПРОФИЛЬ -->
+  <section id="tab-profile" class="hidden">
     <div class="card">
-      <div class="user-head">
-        <div class="ava" id="uAva">М</div>
-        <div>
-          <div class="pos-title" id="uName">Михаил</div>
-          <div class="pos-sub" id="uMeta">@gerulev • ID: 622034883</div>
+      <div class="item-title" style="font-size: 18px;" id="profName">Михаил</div>
+      <div class="item-desc" id="profMeta">@gerulev • ID: 622034883</div>
+      <div class="stats-3" style="margin-top: 12px; margin-bottom: 0;">
+        <div class="st-box">
+          <div class="st-val" id="pBal">0.00 ₽</div>
+          <div class="st-lbl">баланс</div>
         </div>
-      </div>
-      <div class="metrics" style="margin-bottom: 0;">
-        <div class="metric">
-          <div class="metric-num" id="pBal">0.00 ₽</div>
-          <div class="metric-cap">баланс</div>
+        <div class="st-box">
+          <div class="st-val" id="pOrd">0</div>
+          <div class="st-lbl">заказов</div>
         </div>
-        <div class="metric">
-          <div class="metric-num" id="pOrders">0</div>
-          <div class="metric-cap">заказов</div>
-        </div>
-        <div class="metric">
-          <div class="metric-num" id="pStock">0</div>
-          <div class="metric-cap">товаров</div>
+        <div class="st-box">
+          <div class="st-val" id="pStk">0</div>
+          <div class="st-lbl">в наличии</div>
         </div>
       </div>
     </div>
 
-    <div class="row-card" onclick="goTab('deposit')">
-      <div>
-        <div class="pos-title" style="margin: 0;">Пополнить баланс</div>
-        <div class="pos-sub">Звёзды или TON с зачислением в ₽</div>
-      </div>
+    <button class="menu-tile" onclick="openTab('deposit')">
+      <span>💳 Пополнить баланс (₽)</span>
       <span>›</span>
-    </div>
-
-    <div class="row-card" onclick="openSupport()">
-      <div>
-        <div class="pos-title" style="margin: 0;">Поддержка (@gerulev)</div>
-        <div class="pos-sub">Написать напрямую в Telegram</div>
-      </div>
+    </button>
+    <button class="menu-tile" onclick="openTab('my')">
+      <span>📦 Мои заказы</span>
+      <span>›</span>
+    </button>
+    <button class="menu-tile" onclick="openSupport()">
+      <span>💬 Написать в поддержку (@gerulev)</span>
       <span>↗</span>
-    </div>
-
-    <div class="row-card" onclick="syncState()">
-      <div>
-        <div class="pos-title" style="margin: 0;">Обновить данные</div>
-        <div class="pos-sub">Синхронизация с сервером</div>
-      </div>
+    </button>
+    <button class="menu-tile" onclick="syncAll()">
+      <span>↻ Синхронизировать с ботом</span>
       <span>↻</span>
-    </div>
+    </button>
   </section>
 
-  <section id="sec-support" class="hidden">
-    <div class="intro-card">
-      <div class="intro-title">Поддержка</div>
-      <div class="intro-desc">Связь по заказам, кодам входа и вопросам по балансу</div>
+  <!-- ПОМОЩЬ -->
+  <section id="tab-support" class="hidden">
+    <div class="hero">
+      <h1>Поддержка и FAQ</h1>
+      <p>Быстрые ответы и связь с администратором</p>
+    </div>
+
+    <button class="menu-tile" onclick="openSupport()">
+      <span>💬 Открыть чат с @gerulev</span>
+      <span>↗</span>
+    </button>
+    <button class="menu-tile" onclick="openTab('deposit')">
+      <span>💳 Перейти к пополнению</span>
+      <span>›</span>
+    </button>
+
+    <div class="card">
+      <div class="item-title">Как зачисляется пополнение?</div>
+      <div class="item-desc">Любая сумма в звёздах или TON сразу переводится в единый баланс в рублях (₽).</div>
     </div>
     <div class="card">
-      <div class="pos-title">Чат с поддержкой</div>
-      <div class="pos-sub">Код входа после покупки можно получить или запросить в чате с ботом, а по остальным вопросам напиши напрямую @gerulev.</div>
-      <button class="btn-ghost" onclick="openSupport()">
-        <span>Открыть @gerulev</span>
-        <span>↗</span>
-      </button>
+      <div class="item-title">Как получить код входа?</div>
+      <div class="item-desc">После покупки в каталоге перейди в чат с ботом и нажми кнопку запроса/получения кода.</div>
     </div>
   </section>
 
-  <footer class="foot">
-    <div><strong>VelvetVault</strong> • 2026</div>
-    <span onclick="showAlert('Политика конфиденциальности: данные используются только для выдачи заказов.', 'ok')">Политика конфиденциальности</span>
-    <span onclick="showAlert('Пользовательское соглашение: проверяйте аккаунт сразу после выдачи.', 'ok')">Пользовательское соглашение</span>
-    <span onclick="showAlert('Политика возврата: обращения по спорным ситуациям — через @gerulev.', 'ok')">Политика возврата</span>
-  </footer>
+  <div class="footer-links">
+    <div><strong>CrimsonGrid</strong> • 2026</div>
+    <span onclick="showMsg('Политика конфиденциальности: данные используются только для работы магазина и выдачи заказов.', 'ok')">Политика конфиденциальности</span>
+    <span onclick="showMsg('Пользовательское соглашение: проверяйте товар сразу после получения.', 'ok')">Пользовательское соглашение</span>
+    <span onclick="showMsg('Политика возврата: по вопросам замен обращайтесь в @gerulev.', 'ok')">Политика возврата</span>
+  </div>
 
-  <nav class="dock">
-    <button class="dock-btn active" id="d-shop" onclick="goTab('shop')">
+  <!-- Нижняя навигация -->
+  <nav class="bottom-bar">
+    <button class="b-btn active" id="nav-shop" onclick="openTab('shop')">
       <span>🛍</span>
       <span>Магазин</span>
     </button>
-    <button class="dock-btn" id="d-my" onclick="goTab('my')">
+    <button class="b-btn" id="nav-my" onclick="openTab('my')">
       <span>📦</span>
       <span>Мои</span>
     </button>
-    <button class="dock-btn" id="d-deposit" onclick="goTab('deposit')">
+    <button class="b-btn" id="nav-deposit" onclick="openTab('deposit')">
       <span>₽</span>
       <span>Пополнить</span>
     </button>
-    <button class="dock-btn" id="d-profile" onclick="goTab('profile')">
+    <button class="b-btn" id="nav-profile" onclick="openTab('profile')">
       <span>👤</span>
       <span>Профиль</span>
     </button>
-    <button class="dock-btn" id="d-support" onclick="goTab('support')">
+    <button class="b-btn" id="nav-support" onclick="openTab('support')">
       <span>🆘</span>
-      <span>Поддержка</span>
+      <span>Помощь</span>
     </button>
   </nav>
 
   <script>
     const API_BASE = "https://tg-acc-shop.onrender.com";
-    const SUPPORT_URL = "https://t.me/gerulev";
+    const SUPPORT_LINK = "https://t.me/gerulev";
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) {
       tg.ready();
@@ -619,7 +690,7 @@
     const firstName = (tgUser && tgUser.first_name) || "Михаил";
     const username = (tgUser && tgUser.username) ? `@${tgUser.username}` : "@gerulev";
 
-    let appState = {
+    let state = {
       balance_rub: 0,
       rub_per_star: 1.6,
       rub_per_ton: 450,
@@ -628,114 +699,128 @@
       items: []
     };
 
-    let curFilter = "all";
-    let curMethod = "stars";
-    let curPreset = 10;
+    let activeChip = "all";
+    let method = "stars";
+    let preset = 10;
 
-    function showAlert(msg, kind = "ok") {
+    function hideLoader() {
+      document.getElementById("loaderScreen").classList.add("done");
+    }
+    setTimeout(hideLoader, 750);
+
+    function showMsg(text, type = "ok") {
       const el = document.getElementById("alertBox");
-      el.textContent = msg;
-      el.className = `banner ${kind}`;
+      el.textContent = text;
+      el.className = `alert ${type}`;
       el.classList.remove("hidden");
     }
 
-    function hideAlert() {
+    function clearMsg() {
       document.getElementById("alertBox").classList.add("hidden");
     }
 
     function openSupport() {
       if (tg && tg.openTelegramLink) {
-        tg.openTelegramLink(SUPPORT_URL);
+        tg.openTelegramLink(SUPPORT_LINK);
       } else {
-        window.open(SUPPORT_URL, "_blank");
+        window.open(SUPPORT_LINK, "_blank");
       }
     }
 
-    function goTab(tab) {
+    function copyWallet() {
+      const addr = document.getElementById("walletAddr").textContent || "";
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(addr).then(() => showMsg("Адрес TON скопирован", "ok")).catch(() => showMsg("Выдели адрес вручную", "ok"));
+      } else {
+        showMsg("Выдели адрес вручную", "ok");
+      }
+    }
+
+    function openTab(tab) {
       ["shop", "my", "deposit", "profile", "support"].forEach((t) => {
-        document.getElementById(`sec-${t}`).classList.toggle("hidden", t !== tab);
-        document.getElementById(`d-${t}`).classList.toggle("active", t === tab);
+        document.getElementById(`tab-${t}`).classList.toggle("hidden", t !== tab);
+        document.getElementById(`nav-${t}`).classList.toggle("active", t === tab);
       });
-      syncState();
+      syncAll();
     }
 
-    function pickFilter(f, btn) {
-      curFilter = f;
-      document.querySelectorAll("#fBar .f-btn").forEach((b) => b.classList.remove("active"));
+    function setChip(chip, btn) {
+      activeChip = chip;
+      document.querySelectorAll("#chipsRow .chip").forEach((c) => c.classList.remove("active"));
       if (btn) btn.classList.add("active");
-      drawShop();
+      renderCatalog();
     }
 
-    function pickMethod(m) {
-      curMethod = m;
-      document.getElementById("swStars").classList.toggle("active", m === "stars");
-      document.getElementById("swTon").classList.toggle("active", m === "ton");
-      document.getElementById("boxStars").classList.toggle("hidden", m !== "stars");
-      document.getElementById("boxTon").classList.toggle("hidden", m !== "ton");
+    function setMethod(m) {
+      method = m;
+      document.getElementById("segStars").classList.toggle("active", m === "stars");
+      document.getElementById("segTon").classList.toggle("active", m === "ton");
+      document.getElementById("panelStars").classList.toggle("hidden", m !== "stars");
+      document.getElementById("panelTon").classList.toggle("hidden", m !== "ton");
 
       if (m === "stars") {
-        document.getElementById("inpStars").value = "";
-        curPreset = 10;
-        document.querySelectorAll("#boxStars .amt-btn").forEach((b, i) => b.classList.toggle("active", i === 0));
+        document.getElementById("customStars").value = "";
+        preset = 10;
+        document.querySelectorAll("#panelStars .pre").forEach((b, i) => b.classList.toggle("active", i === 0));
       } else {
-        document.getElementById("inpTon").value = "";
-        curPreset = 0.5;
-        document.querySelectorAll("#boxTon .amt-btn").forEach((b, i) => b.classList.toggle("active", i === 0));
+        document.getElementById("customTon").value = "";
+        preset = 0.25;
+        document.querySelectorAll("#panelTon .pre").forEach((b, i) => b.classList.toggle("active", i === 0));
       }
       refreshDepBtn();
     }
 
-    function pickPreset(val, btn) {
-      curPreset = Number(val);
-      const wrap = curMethod === "stars" ? "#boxStars" : "#boxTon";
-      document.querySelectorAll(`${wrap} .amt-btn`).forEach((b) => b.classList.remove("active"));
+    function setPreset(val, btn) {
+      preset = Number(val);
+      const wrap = method === "stars" ? "#panelStars" : "#panelTon";
+      document.querySelectorAll(`${wrap} .pre`).forEach((b) => b.classList.remove("active"));
       if (btn) btn.classList.add("active");
-      if (curMethod === "stars") {
-        document.getElementById("inpStars").value = "";
+      if (method === "stars") {
+        document.getElementById("customStars").value = "";
       } else {
-        document.getElementById("inpTon").value = "";
+        document.getElementById("customTon").value = "";
       }
       refreshDepBtn();
     }
 
     function onCustom(m) {
-      const inp = document.getElementById(m === "stars" ? "inpStars" : "inpTon");
-      const num = parseFloat(String(inp.value || "").replace(",", ".").trim());
-      const wrap = m === "stars" ? "#boxStars" : "#boxTon";
-      if (!isNaN(num) && num > 0) {
-        document.querySelectorAll(`${wrap} .amt-btn`).forEach((b) => b.classList.remove("active"));
-        curPreset = m === "stars" ? Math.floor(num) : num;
+      const inp = document.getElementById(m === "stars" ? "customStars" : "customTon");
+      const val = parseFloat(String(inp.value || "").replace(",", ".").trim());
+      const wrap = m === "stars" ? "#panelStars" : "#panelTon";
+      if (!isNaN(val) && val > 0) {
+        document.querySelectorAll(`${wrap} .pre`).forEach((b) => b.classList.remove("active"));
+        preset = m === "stars" ? Math.floor(val) : val;
       } else {
-        curPreset = m === "stars" ? 10 : 0.5;
+        preset = m === "stars" ? 10 : 0.25;
       }
       refreshDepBtn();
     }
 
-    function readAmount() {
-      if (curMethod === "stars") {
-        const raw = String(document.getElementById("inpStars").value || "").trim();
+    function getAmount() {
+      if (method === "stars") {
+        const raw = String(document.getElementById("customStars").value || "").trim();
         if (raw) {
           const n = parseInt(raw, 10);
           return isNaN(n) ? 0 : n;
         }
-        return parseInt(curPreset, 10) || 0;
+        return parseInt(preset, 10) || 0;
       }
-      const raw = String(document.getElementById("inpTon").value || "").replace(",", ".").trim();
+      const raw = String(document.getElementById("customTon").value || "").replace(",", ".").trim();
       if (raw) {
         const n = parseFloat(raw);
         return isNaN(n) ? 0 : n;
       }
-      return parseFloat(curPreset) || 0;
+      return parseFloat(preset) || 0;
     }
 
     function refreshDepBtn() {
-      const amt = readAmount();
-      const btn = document.getElementById("doDepBtn");
-      if (curMethod === "stars") {
-        const rub = (amt * Number(appState.rub_per_star || 1.6)).toFixed(2);
+      const amt = getAmount();
+      const btn = document.getElementById("submitDepBtn");
+      if (method === "stars") {
+        const rub = (amt * Number(state.rub_per_star || 1.6)).toFixed(2);
         btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} ⭐ (+${rub} ₽)` : "УКАЖИ ЧИСЛО ЗВЁЗД";
       } else {
-        const rub = (amt * Number(appState.rub_per_ton || 450)).toFixed(2);
+        const rub = (amt * Number(state.rub_per_ton || 450)).toFixed(2);
         btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} TON (+${rub} ₽)` : "УКАЖИ СУММУ TON";
       }
     }
@@ -748,103 +833,103 @@
         .replace(/"/g, "&quot;");
     }
 
-    function drawShop() {
-      const items = appState.items || [];
-      const orders = appState.orders || [];
-      const totalStock = items.reduce((sum, x) => sum + Number(x.count || 0), 0);
+    function renderCatalog() {
+      const items = state.items || [];
+      const orders = state.orders || [];
+      const totalStock = items.reduce((a, b) => a + Number(b.count || 0), 0);
 
-      document.getElementById("mStock").textContent = String(totalStock);
-      document.getElementById("mCats").textContent = String(items.length);
-      document.getElementById("mBought").textContent = String(orders.length);
-      document.getElementById("pStock").textContent = String(totalStock);
-      document.getElementById("stockSummary").textContent = `${totalStock} шт. • ${items.length} поз.`;
+      document.getElementById("sStock").textContent = String(totalStock);
+      document.getElementById("sCats").textContent = String(items.length);
+      document.getElementById("sOrders").textContent = String(orders.length);
+      document.getElementById("pStk").textContent = String(totalStock);
+      document.getElementById("counterTxt").textContent = `${totalStock} шт. • ${items.length} поз.`;
 
-      const q = (document.getElementById("qInput").value || "").trim().toLowerCase();
+      const q = (document.getElementById("searchBox").value || "").trim().toLowerCase();
       let list = items.filter((it) => {
         const t = (it.title || "").toLowerCase();
         const d = (it.description || "").toLowerCase();
-        const pr = Number(it.price_rub || 0);
-        const okQ = !q || t.includes(q) || d.includes(q);
-        if (!okQ) return false;
-        if (curFilter === "low") return pr <= 300;
-        if (curFilter === "high") return pr > 300;
+        const p = Number(it.price_rub || 0);
+        const okSearch = !q || t.includes(q) || d.includes(q);
+        if (!okSearch) return false;
+        if (activeChip === "cheap") return p <= 250;
+        if (activeChip === "mid") return p > 250 && p <= 600;
+        if (activeChip === "exp") return p > 600;
         return true;
       });
 
-      const s = document.getElementById("sortSel").value;
-      if (s === "asc") list = list.slice().sort((a, b) => Number(a.price_rub) - Number(b.price_rub));
-      if (s === "desc") list = list.slice().sort((a, b) => Number(b.price_rub) - Number(a.price_rub));
+      const sortMode = document.getElementById("sortBox").value;
+      if (sortMode === "price_asc") list = list.slice().sort((a, b) => Number(a.price_rub) - Number(b.price_rub));
+      if (sortMode === "price_desc") list = list.slice().sort((a, b) => Number(b.price_rub) - Number(a.price_rub));
 
-      const box = document.getElementById("catalogBox");
+      const box = document.getElementById("itemsContainer");
       if (!list.length) {
-        box.innerHTML = `<div class="card"><div class="pos-sub">В наличии сейчас пусто. Добавь позиции через админку.</div></div>`;
+        box.innerHTML = `<div class="card"><div class="item-desc">Сейчас в наличии пусто. Добавь позиции через админку в боте.</div></div>`;
         return;
       }
 
       box.innerHTML = list.map((it) => `
-        <div class="pos-card">
+        <div class="item-card">
           <div>
-            <div class="pos-title">${esc(it.title)}</div>
-            <div class="pos-sub">${esc(it.description || "")}</div>
-            <div class="pos-sub" style="margin-top: 4px;">В наличии: <strong style="color: var(--ink);">${it.count} шт.</strong></div>
+            <div class="item-title">${esc(it.title)}</div>
+            <div class="item-desc">${esc(it.description || "")}</div>
+            <div class="item-desc" style="margin-top: 4px;">В наличии: <strong style="color: var(--text);">${it.count} шт.</strong></div>
           </div>
-          <div class="pos-right">
-            <div class="pos-price">${Number(it.price_rub).toFixed(0)} ₽</div>
-            <button class="btn-w" onclick="buyPos('${esc(it.key)}')">Купить</button>
+          <div class="item-right">
+            <div class="item-price">${Number(it.price_rub).toFixed(0)} ₽</div>
+            <button class="btn-primary" onclick="buyItem('${esc(it.key)}')">Купить</button>
           </div>
         </div>
       `).join("");
     }
 
-    function drawAll() {
-      const rub = Number(appState.balance_rub || 0).toFixed(2);
-      const orders = appState.orders || [];
+    function renderAll() {
+      const rub = Number(state.balance_rub || 0).toFixed(2);
+      const orders = state.orders || [];
 
       document.getElementById("topBal").textContent = `${rub} ₽`;
       document.getElementById("depBal").textContent = `${rub} ₽`;
       document.getElementById("pBal").textContent = `${rub} ₽`;
-      document.getElementById("pOrders").textContent = String(orders.length);
-      document.getElementById("mBought").textContent = String(orders.length);
+      document.getElementById("pOrd").textContent = String(orders.length);
+      document.getElementById("sOrders").textContent = String(orders.length);
 
-      document.getElementById("uAva").textContent = (firstName[0] || "М").toUpperCase();
-      document.getElementById("uName").textContent = firstName;
-      document.getElementById("uMeta").textContent = `${username} • ID: ${userId}`;
+      document.getElementById("profName").textContent = firstName;
+      document.getElementById("profMeta").textContent = `${username} • ID: ${userId}`;
 
-      document.getElementById("noteStars").textContent = `1 ⭐ = ${appState.rub_per_star} ₽`;
-      document.getElementById("noteTon").textContent = `1 TON = ${appState.rub_per_ton} ₽`;
-      document.getElementById("tonAddr").textContent = appState.crypto_wallet || "";
+      document.getElementById("rateStars").textContent = `Курс: 1 ⭐ = ${state.rub_per_star} ₽`;
+      document.getElementById("rateTon").textContent = `Курс: 1 TON = ${state.rub_per_ton} ₽`;
+      document.getElementById("walletAddr").textContent = state.crypto_wallet || "";
 
-      const myBox = document.getElementById("myOrdersBox");
+      const ordBox = document.getElementById("ordersContainer");
       if (!orders.length) {
-        myBox.innerHTML = `<div class="pos-sub">Заказов пока нет.</div>`;
+        ordBox.innerHTML = `<div class="item-desc">Пока заказов нет.</div>`;
       } else {
-        myBox.innerHTML = orders.slice().reverse().map((o) =>
-          `<div class="addr-box" style="font-family: monospace; margin-bottom: 8px;">${esc(o)}</div>`
+        ordBox.innerHTML = orders.slice().reverse().map((o) =>
+          `<div class="wallet-row" style="font-family: monospace; margin-bottom: 8px;"><div class="wallet-addr">${esc(o)}</div></div>`
         ).join("");
       }
 
       refreshDepBtn();
-      drawShop();
+      renderCatalog();
     }
 
-    async function syncState() {
+    async function syncAll() {
       try {
         const res = await fetch(`${API_BASE}/api/state?user_id=${encodeURIComponent(userId)}`);
         const data = await res.json();
         if (data && data.ok) {
-          appState = data;
-          drawAll();
+          state = data;
+          renderAll();
         } else {
-          showAlert((data && data.error) || "Не удалось обновить данные", "err");
+          showMsg((data && data.error) || "Ошибка синхронизации", "err");
         }
       } catch (e) {
-        showAlert("Нет связи с сервером.", "err");
-        drawAll();
+        showMsg("Нет связи с сервером.", "err");
+        renderAll();
       }
     }
 
-    async function buyPos(itemKey) {
-      hideAlert();
+    async function buyItem(itemKey) {
+      clearMsg();
       try {
         const res = await fetch(`${API_BASE}/api/buy`, {
           method: "POST",
@@ -853,25 +938,25 @@
         });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          showAlert((data && data.error) || "Ошибка покупки", "err");
+          showMsg((data && data.error) || "Ошибка покупки", "err");
           return;
         }
         const extra2fa = data.two_fa ? ` | 2FA: ${data.two_fa}` : "";
-        showAlert(`Куплено (${data.order_id})! Номер: ${data.phone}${extra2fa}. Код запроси в чате с ботом.`, "ok");
-        await syncState();
+        showMsg(`Куплено (${data.order_id})! Номер: ${data.phone}${extra2fa}. Код запроси в чате с ботом.`, "ok");
+        await syncAll();
       } catch (e) {
-        showAlert("Ошибка сети при покупке", "err");
+        showMsg("Ошибка сети при покупке", "err");
       }
     }
 
-    async function sendDeposit() {
-      hideAlert();
-      const amt = readAmount();
+    async function runDeposit() {
+      clearMsg();
+      const amt = getAmount();
       if (!amt || amt <= 0) {
-        showAlert("Укажи сумму больше нуля", "err");
+        showMsg("Укажи сумму больше нуля", "err");
         return;
       }
-      const btn = document.getElementById("doDepBtn");
+      const btn = document.getElementById("submitDepBtn");
       btn.disabled = true;
       try {
         const res = await fetch(`${API_BASE}/api/deposit`, {
@@ -879,28 +964,28 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user_id: userId,
-            method: curMethod,
+            method,
             amount: amt,
             username
           })
         });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          showAlert((data && data.error) || "Ошибка пополнения", "err");
+          showMsg((data && data.error) || "Ошибка пополнения", "err");
           return;
         }
-        showAlert(`Баланс пополнен! Текущий баланс: ${Number(data.balance_rub).toFixed(2)} ₽`, "ok");
-        await syncState();
+        showMsg(`Баланс пополнен! Текущий баланс: ${Number(data.balance_rub).toFixed(2)} ₽`, "ok");
+        await syncAll();
       } catch (e) {
-        showAlert("Ошибка сети при пополнении", "err");
+        showMsg("Ошибка сети при пополнении", "err");
       } finally {
         btn.disabled = false;
       }
     }
 
-    document.getElementById("qInput").addEventListener("input", drawShop);
-    drawAll();
-    syncState();
+    document.getElementById("searchBox").addEventListener("input", renderCatalog);
+    renderAll();
+    syncAll();
   </script>
 </body>
 </html>
