@@ -277,7 +277,7 @@
           placeholder="Введи своё число звёзд (например, 15)"
           oninput="onCustomInput('stars')"
         />
-        <div class="sub" id="starsRateHint" style="margin-bottom:10px;">Курс: 1 ⭐ = 1.6 ₽</div>
+        <div class="sub" id="starsRateHint" style="margin-bottom:10px;">Курс: 1 ⭐ = 1.6 ₽ • Оплата через счёт Telegram</div>
       </div>
 
       <div id="tonBox" class="hidden">
@@ -296,11 +296,11 @@
           oninput="onCustomInput('ton')"
         />
         <div class="wallet-box" id="walletAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
-        <div class="sub" id="tonRateHint" style="margin-bottom:10px;">Курс: 1 TON = 450 ₽</div>
+        <div class="sub" id="tonRateHint" style="margin-bottom:10px;">Курс: 1 TON = 450 ₽ • Оплата переводом с комментарием</div>
       </div>
 
       <button class="btn" id="depositSubmitBtn" style="width:100%; padding:13px;" onclick="submitDeposit()">
-        ПОПОЛНИТЬ НА 10 ⭐
+        ВЫСТАВИТЬ СЧЁТ НА 10 ⭐
       </button>
     </div>
   </section>
@@ -452,9 +452,9 @@
       const amt = getCurrentAmount();
       const btn = document.getElementById("depositSubmitBtn");
       if (payMethod === "stars") {
-        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} ⭐` : "УКАЖИТЕ ЧИСЛО ЗВЁЗД";
+        btn.textContent = amt > 0 ? `ВЫСТАВИТЬ СЧЁТ НА ${amt} ⭐` : "УКАЖИТЕ ЧИСЛО ЗВЁЗД";
       } else {
-        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} TON` : "УКАЖИТЕ СУММУ TON";
+        btn.textContent = amt > 0 ? `СОЗДАТЬ СЧЁТ НА ${amt} TON` : "УКАЖИТЕ СУММУ TON";
       }
     }
 
@@ -471,8 +471,10 @@
       document.getElementById("userName").textContent = firstName;
       document.getElementById("userHandle").textContent = `${username} • ID: ${userId}`;
 
-      document.getElementById("starsRateHint").textContent = `Курс: 1 ⭐ = ${stateData.rub_per_star} ₽`;
-      document.getElementById("tonRateHint").textContent = `Курс: 1 TON = ${stateData.rub_per_ton} ₽`;
+      document.getElementById("starsRateHint").textContent =
+        `Курс: 1 ⭐ = ${stateData.rub_per_star} ₽ • Баланс пополнится только после оплаты счёта`;
+      document.getElementById("tonRateHint").textContent =
+        `Курс: 1 TON = ${stateData.rub_per_ton} ₽ • Баланс пополнится после перевода и проверки`;
       document.getElementById("walletAddr").textContent = stateData.crypto_wallet || "";
 
       const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
@@ -581,13 +583,15 @@
         });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          showBanner((data && data.error) || "Ошибка пополнения", "err");
+          showBanner((data && data.error) || "Ошибка создания счёта", "err");
           return;
         }
-        showBanner(`Баланс пополнен! Текущий баланс: ${Number(data.balance_rub).toFixed(2)} ₽`, "ok");
-        await loadState();
+        showBanner(data.message || "Счёт отправлен в чат с ботом. Оплати его для зачисления.", "ok");
+        if (tg && typeof tg.close === "function") {
+          setTimeout(() => tg.close(), 900);
+        }
       } catch (err) {
-        showBanner("Ошибка сети при пополнении", "err");
+        showBanner("Ошибка сети при создании счёта", "err");
       } finally {
         btn.disabled = false;
       }
