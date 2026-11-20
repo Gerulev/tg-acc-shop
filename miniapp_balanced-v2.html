@@ -413,7 +413,7 @@
         </div>
         <input class="input" id="inpTon" type="number" min="0.01" step="0.01" placeholder="Своя сумма TON" oninput="onCustom('ton')" />
         <div class="mono-box" id="tonAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
-        <div class="item-desc" id="rateTon" style="margin-bottom: 10px;">1 TON = 450 ₽ • Зачисление после перевода</div>
+        <div class="item-desc" id="rateTon" style="margin-bottom: 10px;">1 TON = 115 ₽ • Зачисление после перевода</div>
       </div>
 
       <button class="btn-w" id="depBtn" style="width: 100%; padding: 12px;" onclick="doDeposit()">ОПЛАТИТЬ 10 ⭐</button>
@@ -502,7 +502,7 @@
     let state = {
       balance_rub: 0,
       rub_per_star: 1.6,
-      rub_per_ton: 450,
+      rub_per_ton: 115.0,
       crypto_wallet: "UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux",
       orders: [],
       items: []
@@ -607,7 +607,7 @@
         const rub = (amt * Number(state.rub_per_star || 1.6)).toFixed(2);
         btn.textContent = amt > 0 ? `ОПЛАТИТЬ ${amt} ⭐ (+${rub} ₽)` : "УКАЖИ СУММУ";
       } else {
-        const rub = (amt * Number(state.rub_per_ton || 450)).toFixed(2);
+        const rub = (amt * Number(state.rub_per_ton || 115.0)).toFixed(2);
         btn.textContent = amt > 0 ? `ОТПРАВИТЬ ЗАЯВКУ ${amt} TON (~${rub} ₽)` : "УКАЖИ СУММУ";
       }
     }
