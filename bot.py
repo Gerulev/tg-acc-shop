@@ -857,3 +857,21 @@ async def handle_deposit_amount_input(message: Message):
 
     if mode == "adm_new_cat" and is_admin(user_id):
         WAITING_INPUT.pop(user_id, None)
+from aiohttp import web
+import os
+
+async def serve_miniapp(request):
+    file_path = os.path.join(os.path.dirname(__file__), "miniapp_balanced-v2.html")
+    if not os.path.exists(file_path):
+        return web.Response(status=404, text="miniapp_balanced-v2.html not found")
+    return web.FileResponse(file_path)
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/miniapp_balanced-v2.html", serve_miniapp)
+    app.router.add_get("/", serve_miniapp)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
