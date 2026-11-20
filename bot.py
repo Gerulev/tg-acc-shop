@@ -2,6 +2,7 @@ import asyncio
 import base64
 import math
 import os
+import re
 import secrets
 import time
 from aiohttp import web, ClientSession
@@ -15,6 +16,8 @@ from aiogram.types import (
     LabeledPrice,
     PreCheckoutQuery,
 )
+from telethon import TelegramClient
+from telethon.sessions import StringSession
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 CRYPTO_WALLET = os.getenv(
@@ -22,28 +25,36 @@ CRYPTO_WALLET = os.getenv(
     "UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux",
 )
 TONCENTER_API_KEY = os.getenv("TONCENTER_API_KEY", "")
+TG_API_ID = int(os.getenv("TG_API_ID", "0"))
+TG_API_HASH = os.getenv("TG_API_HASH", "")
 SUPPORT_USERNAME = "gerulev"
 ADMIN_ID = int(os.getenv("ADMIN_ID", "622034883"))
 
+# Курсы для отображения баланса в рублях (₽) в профиле
 RUB_PER_STAR = float(os.getenv("RUB_PER_STAR", "1.6"))
 RUB_PER_TON = float(os.getenv("RUB_PER_TON", "450.0"))
 
-# Каталог: ключ -> товар и список свободных аккаунтов
-# Аккаунт: {"id": str, "phone": str, "secret": str}
+# Каталог товаров и пул свободных аккаунтов
+# Формат элемента в accounts: {"id": str, "phone": str, "secret": str}
 CATALOG: dict[str, dict] = {
     "uk_2016": {
         "title": "UK 2016",
         "price_rub": 250.0,
-        "description": "Аккаунт UK 2016. После покупки выдаётся номер и кнопка запроса кода.",
+        "description": "Аккаунт UK 2016. После покупки выдаётся номер и кнопка получения/запроса кода входа.",
         "accounts": [],
     }
 }
 
-# Состояния ввода: user_id -> "waiting_stars" | "waiting_ton" | "adm_add:<key>" | "adm_new_cat"
+# user_id -> "waiting_stars" | "waiting_ton" | "adm_add:<key>" | "adm_new_cat"
 WAITING_INPUT: dict[int, str] = {}
 
+# user_id -> {"comment": str, "amount_ton": float, "created_at": int}
 PENDING_DEPOSITS: dict[int, dict] = {}
+
+# user_id -> {"item_key": str, "comment": str, "amount_ton": float, "created_at": int}
 PENDING_ORDERS: dict[int, dict] = {}
+
+# user_id -> {"order_id": str, "item_title": str, "phone": str, "session_string": str}
 LAST_ISSUED_ACCOUNT: dict[int, dict] = {}
 
 PURCHASE_HISTORY: dict[int, list[str]] = {}
@@ -96,6 +107,30 @@ def deduct_rub_balance(user_id: int, amount_rub: float) -> bool:
     return True
 
 
+async def fetch_tg_login_code(session_str: str) -> str | None:
+    if not TG_API_ID or not TG_API_HASH or not session_str:
+        return None
+    client = TelegramClient(StringSession(session_str), TG_API_ID, TG_API_HASH)
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            return None
+        messages = await client.get_messages(777000, limit=5)
+        for msg in messages:
+            txt = msg.message or ""
+            match = re.search(r"\b(\d{5})\b", txt)
+            if match:
+                return match.group(1)
+        return None
+    except Exception:
+        return None
+    finally:
+        try:
+            await client.disconnect()
+        except Exception:
+            pass
+
+
 def main_menu_keyboard(user_id: int = 0) -> InlineKeyboardMarkup:
     rows = [
         [InlineKeyboardButton(text="🛒 КАТАЛОГ / МАГАЗИН", callback_data="menu_catalog")],
@@ -129,7 +164,7 @@ def admin_panel_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"adm_add:{key}",
             )
         ])
-    rows.append([InlineKeyboardButton(text="📁 Новая категория", callback_data="adm_new_cat")])
+    rows.append([InlineKeyboardButton(text="📁 Новая позиция", callback_data="adm_new_cat")])
     rows.append([InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -161,7 +196,7 @@ def item_view_keyboard(key: str) -> InlineKeyboardMarkup:
 def issued_account_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📩 Запросить код входа", callback_data="req_code")],
+            [InlineKeyboardButton(text="📩 Получить / запросить код входа", callback_data="req_code")],
             [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")],
         ]
     )
@@ -184,6 +219,23 @@ def deposit_ton_check_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text="✅ Я оплатил (проверить TON)", callback_data="check_ton_deposit")],
             [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_deposit")],
+        ]
+    )
+
+
+def catalog_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")]
+        ]
+    )
+
+
+def payment_keyboard(item_key: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Я оплатил (проверить TON)", callback_data=f"check:{item_key}")],
+            [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel")],
         ]
     )
 
@@ -341,8 +393,8 @@ async def cb_adm_panel(callback: CallbackQuery):
 
     lines.append(
         "\n<b>Формат загрузки:</b> по одному аккаунту на строку\n"
-        "<code>+447700900123:заметка</code> или просто <code>+447700900123</code>\n"
-        "<b>Отправка кода:</b> <code>/code &lt;user_id&gt; &lt;КОД&gt;</code>"
+        "<code>+447700900123:StringSession</code> или просто <code>+447700900123</code>\n"
+        "<b>Ручной код:</b> <code>/code &lt;user_id&gt; &lt;КОД&gt;</code>"
     )
     await callback.message.edit_text(
         "\n".join(lines),
@@ -368,7 +420,7 @@ async def cb_adm_add(callback: CallbackQuery):
     await callback.message.edit_text(
         f"➕ <b>Загрузка в {item['title']}</b>\n\n"
         "Отправь список аккаунтов (каждый с новой строки):\n"
-        "<code>+447700900123:доп_инфо</code> или просто <code>+447700900123</code>",
+        "<code>+447700900123:StringSession</code> или просто <code>+447700900123</code>",
         parse_mode="HTML",
         reply_markup=back_to_main_keyboard(),
     )
@@ -383,7 +435,7 @@ async def cb_adm_new_cat(callback: CallbackQuery):
 
     WAITING_INPUT[callback.from_user.id] = "adm_new_cat"
     await callback.message.edit_text(
-        "📁 <b>Новая категория</b>\n\n"
+        "📁 <b>Новая позиция</b>\n\n"
         "Отправь строку:\n"
         "<code>ключ|Название|Цена_в_рублях|Описание</code>\n\n"
         "Пример:\n"
@@ -402,7 +454,7 @@ async def cb_menu_catalog(callback: CallbackQuery):
         await callback.message.edit_text(
             "🛍 <b>Каталог</b>\n\nСейчас в каталоге пусто — аккаунтов в наличии нет, выбора пока нет.",
             parse_mode="HTML",
-            reply_markup=back_to_main_keyboard(),
+            reply_markup=catalog_keyboard(),
         )
         await callback.answer()
         return
@@ -468,21 +520,23 @@ async def cb_buy_acc(callback: CallbackQuery):
     order_id = f"ORD-{secrets.token_hex(3).upper()}"
     phone = acc.get("phone", "")
     secret_info = acc.get("secret", "")
+    session_str = secret_info if len(secret_info) > 40 else ""
 
     LAST_ISSUED_ACCOUNT[uid] = {
         "order_id": order_id,
         "item_title": item["title"],
         "phone": phone,
+        "session_string": session_str,
     }
     PURCHASE_HISTORY.setdefault(uid, []).append(f"{order_id}: {item['title']} ({phone})")
 
-    extra = f"\n🔑 <b>Доп. инфо:</b> <code>{secret_info}</code>" if secret_info else ""
+    extra = f"\n🔑 <b>Доп. инфо:</b> <code>{secret_info}</code>" if (secret_info and not session_str) else ""
     await callback.message.edit_text(
         f"✅ <b>Аккаунт выдан!</b>\n\n"
         f"<b>Заказ:</b> <code>{order_id}</code>\n"
         f"<b>Товар:</b> {item['title']}\n"
         f"<b>Номер:</b> <code>{phone}</code>{extra}\n\n"
-        "Введи номер и нажми <b>«Запросить код входа»</b>.",
+        "Введи номер при входе и нажми <b>«Получить / запросить код входа»</b>.",
         parse_mode="HTML",
         reply_markup=issued_account_keyboard(),
     )
@@ -508,6 +562,19 @@ async def cb_req_code(callback: CallbackQuery):
         await callback.answer("Нет выданного аккаунта", show_alert=True)
         return
 
+    session_str = acc.get("session_string") or ""
+    if session_str:
+        await callback.answer("Проверяю входящий код...")
+        code = await fetch_tg_login_code(session_str)
+        if code:
+            await callback.message.answer(
+                f"🔑 <b>Код входа получен автоматически!</b>\n\n"
+                f"<b>Номер:</b> <code>{acc['phone']}</code>\n"
+                f"<b>Код:</b> <code>{code}</code>",
+                parse_mode="HTML",
+            )
+            return
+
     uname = f"@{callback.from_user.username}" if callback.from_user.username else "без юзернейма"
     await notify_admin(
         callback.bot,
@@ -516,7 +583,7 @@ async def cb_req_code(callback: CallbackQuery):
         f"Номер: <code>{acc['phone']}</code>\n"
         f"Отправить: <code>/code {uid} КОД</code>",
     )
-    await callback.answer("Запрос отправлен!", show_alert=True)
+    await callback.answer("Код ещё не пришёл или нет сессии — запрос ушёл админу!", show_alert=True)
 
 
 @dp.callback_query(F.data == "menu_profile")
@@ -594,7 +661,7 @@ async def cb_dep_method_ton(callback: CallbackQuery):
 
 
 @dp.message(F.text & ~F.text.startswith("/"))
-async def handle_text_input(message: Message):
+async def handle_deposit_amount_input(message: Message):
     user_id = message.from_user.id
     mode = WAITING_INPUT.get(user_id)
     if not mode:
@@ -851,6 +918,16 @@ async def cb_menu_reviews(callback: CallbackQuery):
         text, parse_mode="HTML", reply_markup=back_to_main_keyboard()
     )
     await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("buy:"))
+async def cb_buy(callback: CallbackQuery):
+    await callback.answer("Сейчас нет товаров в наличии", show_alert=True)
+
+
+@dp.callback_query(F.data.startswith("check:"))
+async def cb_check_payment(callback: CallbackQuery):
+    await callback.answer("Заказ недоступен", show_alert=True)
 
 
 @dp.callback_query(F.data == "cancel")
