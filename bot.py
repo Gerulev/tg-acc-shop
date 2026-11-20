@@ -27,18 +27,8 @@ SUPPORT_USERNAME = "gerulev"
 RUB_PER_STAR = float(os.getenv("RUB_PER_STAR", "1.6"))
 RUB_PER_TON = float(os.getenv("RUB_PER_TON", "450.0"))
 
-CATALOG = {
-    "acc_basic": {
-        "title": "Аккаунт — Базовый",
-        "price_ton": 0.5,
-        "stock": ["acc1_data_example", "acc2_data_example"],
-    },
-    "acc_aged": {
-        "title": "Аккаунт — С отлёжкой",
-        "price_ton": 1.0,
-        "stock": ["acc3_data_example"],
-    },
-}
+# Каталог пустой — выбора аккаунтов нет
+CATALOG: dict[str, dict] = {}
 
 # user_id -> "waiting_stars" | "waiting_ton"
 WAITING_INPUT: dict[int, str] = {}
@@ -105,13 +95,11 @@ def deposit_ton_check_keyboard() -> InlineKeyboardMarkup:
 
 
 def catalog_keyboard() -> InlineKeyboardMarkup:
-    rows = []
-    for key, item in CATALOG.items():
-        count = len(item["stock"])
-        label = f"{item['title']} — {item['price_ton']} TON ({count} шт.)"
-        rows.append([InlineKeyboardButton(text=label, callback_data=f"buy:{key}")])
-    rows.append([InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_main")]
+        ]
+    )
 
 
 def payment_keyboard(item_key: str) -> InlineKeyboardMarkup:
@@ -241,7 +229,10 @@ async def cb_back_main(callback: CallbackQuery):
 @dp.callback_query(F.data == "menu_catalog")
 async def cb_menu_catalog(callback: CallbackQuery):
     WAITING_INPUT.pop(callback.from_user.id, None)
-    text = "🛍 <b>Каталог товаров</b>\n\nВыбери интересующую позицию для покупки:"
+    text = (
+        "🛍 <b>Каталог</b>\n\n"
+        "Сейчас в каталоге пусто — аккаунтов в наличии нет, выбора пока нет."
+    )
     await callback.message.edit_text(
         text, parse_mode="HTML", reply_markup=catalog_keyboard()
     )
@@ -419,11 +410,11 @@ async def cb_check_ton_deposit(callback: CallbackQuery):
     new_rub = get_rub_balance(user_id)
 
     await callback.message.edit_text(
-        f"✅ <b>Пополнение в TON подтверждено!</b>\n\n"
+        f"✅ <b>Обновление баланса</b>\n\n"
         f"Начислено: <b>+{added_ton} TON</b>\n"
         f"Баланс: <b>{new_rub:.2f} ₽</b> <i>(💎 {new_ton:.4f} TON)</i>",
         parse_mode="HTML",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=back_to_main_keyboard(),
     )
 
 
@@ -434,7 +425,7 @@ async def cb_cancel_deposit(callback: CallbackQuery):
     PENDING_DEPOSITS.pop(user_id, None)
     await callback.message.edit_text(
         "Пополнение отменено.",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=back_to_main_keyboard(),
     )
     await callback.answer()
 
@@ -463,11 +454,11 @@ async def on_successful_payment(message: Message):
         new_rub = get_rub_balance(user_id)
 
         await message.answer(
-            f"⭐️ <b>Оплата прошла успешно!</b>\n\n"
+            f"⭐️ <b>Обновление баланса</b>\n\n"
             f"Начислено: <b>+{added_stars} ⭐</b>\n"
             f"Баланс: <b>{new_rub:.2f} ₽</b> <i>(⭐ {new_stars})</i>",
             parse_mode="HTML",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=back_to_main_keyboard(),
         )
 
 
@@ -500,86 +491,18 @@ async def cb_menu_reviews(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("buy:"))
 async def cb_buy(callback: CallbackQuery):
-    item_key = callback.data.split(":", 1)[1]
-    item = CATALOG.get(item_key)
-
-    if not item or len(item["stock"]) == 0:
-        await callback.answer("Товара нет в наличии", show_alert=True)
-        return
-
-    user_id = callback.from_user.id
-    comment = f"ORD{user_id}{secrets.token_hex(2).upper()}"
-    amount_ton = float(item["price_ton"])
-
-    PENDING_ORDERS[user_id] = {
-        "item_key": item_key,
-        "comment": comment,
-        "amount_ton": amount_ton,
-        "created_at": int(time.time()),
-    }
-
-    text = (
-        f"<b>Заказ:</b> {item['title']}\n"
-        f"<b>К оплате:</b> <code>{amount_ton}</code> TON\n"
-        f"<b>TON-кошелёк:</b>\n<code>{CRYPTO_WALLET}</code>\n"
-        f"<b>Обязательный комментарий (memo):</b>\n<code>{comment}</code>\n\n"
-        "Переведи точную сумму с указанным комментарием и нажми кнопку проверки."
-    )
-    await callback.message.edit_text(
-        text, parse_mode="HTML", reply_markup=payment_keyboard(item_key)
-    )
-    await callback.answer()
+    await callback.answer("Сейчас нет товаров в наличии", show_alert=True)
 
 
 @dp.callback_query(F.data.startswith("check:"))
 async def cb_check_payment(callback: CallbackQuery):
-    item_key = callback.data.split(":", 1)[1]
-    user_id = callback.from_user.id
-    order = PENDING_ORDERS.get(user_id)
-
-    if not order or order.get("item_key") != item_key:
-        await callback.answer("Заказ не найден или уже закрыт", show_alert=True)
-        return
-
-    await callback.answer("Проверяем транзакцию в сети TON...")
-
-    paid = await verify_ton_payment(
-        expected_ton=order["amount_ton"],
-        expected_comment=order["comment"],
-        min_utime=order["created_at"],
-    )
-
-    if not paid:
-        await callback.answer(
-            "Перевод пока не найден. Проверь сумму и комментарий и попробуй через 10–15 сек.",
-            show_alert=True,
-        )
-        return
-
-    item = CATALOG.get(item_key)
-    if not item or len(item["stock"]) == 0:
-        PENDING_ORDERS.pop(user_id, None)
-        await callback.message.edit_text(
-            f"Оплата получена, но товар закончился. Напиши @{SUPPORT_USERNAME}.",
-            reply_markup=catalog_keyboard(),
-        )
-        return
-
-    delivered_item = item["stock"].pop(0)
-    PENDING_ORDERS.pop(user_id, None)
-    PURCHASE_HISTORY.setdefault(user_id, []).append(f"{item['title']}: {delivered_item}")
-
-    await callback.message.edit_text(
-        f"🎉 <b>Оплата в TON подтверждена!</b> Ваш товар:\n<code>{delivered_item}</code>",
-        parse_mode="HTML",
-        reply_markup=catalog_keyboard(),
-    )
+    await callback.answer("Заказ недоступен", show_alert=True)
 
 
 @dp.callback_query(F.data == "cancel")
 async def cb_cancel(callback: CallbackQuery):
     PENDING_ORDERS.pop(callback.from_user.id, None)
-    await callback.message.edit_text("Заказ отменён.", reply_markup=catalog_keyboard())
+    await callback.message.edit_text("Отменено.", reply_markup=back_to_main_keyboard())
     await callback.answer()
 
 
