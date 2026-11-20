@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>VelvetVault</title>
+  <title>Dark Store</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -15,6 +15,7 @@
       --muted: #b994a4;
       --white: #ffffff;
       --dark: #15080e;
+      --rose: #e12d53;
       --ok: #5be39b;
       --err: #ff5c77;
     }
@@ -28,10 +29,68 @@
     }
 
     body {
-      background: linear-gradient(180deg, #210c15 0%, var(--bg) 260px);
+      background:
+        radial-gradient(circle at 50% -10%, rgba(225, 45, 83, 0.22), transparent 46%),
+        var(--bg);
       color: var(--text);
       min-height: 100vh;
       padding: 14px 14px 96px;
+    }
+
+    .splash {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background:
+        radial-gradient(circle at 50% 34%, rgba(225, 45, 83, 0.28), transparent 55%),
+        #0b0508;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .splash.hide {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .splash-mark {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, #2d101c, #16070d);
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 0 38px rgba(225, 45, 83, 0.35);
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      font-weight: 900;
+    }
+    .splash-title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .splash-pct {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+    .splash-bar {
+      width: 200px;
+      height: 5px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+    .splash-bar > div {
+      height: 100%;
+      width: 0%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--rose), #ffffff);
+      transition: width 0.14s ease;
     }
 
     .topbar {
@@ -42,16 +101,8 @@
       margin-bottom: 14px;
     }
 
-    .brand {
-      font-size: 18px;
-      font-weight: 800;
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .brand { font-size: 18px; font-weight: 800; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
 
     .pill {
       background: var(--card-2);
@@ -76,17 +127,8 @@
     .alert.ok { border-color: rgba(91, 227, 155, 0.5); color: var(--ok); }
     .alert.err { border-color: rgba(255, 92, 119, 0.5); color: var(--err); }
 
-    .section-title {
-      font-size: 21px;
-      font-weight: 900;
-      margin-bottom: 4px;
-    }
-
-    .section-sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
+    .section-title { font-size: 21px; font-weight: 900; margin-bottom: 4px; }
+    .section-sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
 
     .input {
       width: 100%;
@@ -163,8 +205,8 @@
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 9px 12px;
-      font-size: 12.5px;
+      padding: 8px 11px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
     }
@@ -301,8 +343,16 @@
   </style>
 </head>
 <body>
+  <div class="splash" id="splash">
+    <div class="splash-mark">DS</div>
+    <div class="splash-title">DARK STORE</div>
+    <div class="splash-pct" id="splashPct">0%</div>
+    <div class="splash-bar"><div id="splashFill"></div></div>
+    <button class="btn-d" style="margin-top: 6px;" onclick="closeSplash()">Войти</button>
+  </div>
+
   <header class="topbar">
-    <div class="brand">VelvetVault</div>
+    <div class="brand">Dark Store</div>
     <div class="top-actions">
       <button class="pill" id="topBal" onclick="openTab('deposit')">0.00 ₽</button>
       <button class="pill" onclick="openSupport()">Поддержка</button>
@@ -363,10 +413,10 @@
         </div>
         <input class="input" id="inpTon" type="number" min="0.01" step="0.01" placeholder="Своя сумма TON" oninput="onCustom('ton')" />
         <div class="mono-box" id="tonAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
-        <div class="item-desc" id="rateTon" style="margin-bottom: 10px;">1 TON = 450 ₽</div>
+        <div class="item-desc" id="rateTon" style="margin-bottom: 10px;">1 TON = 450 ₽ • Зачисление после перевода</div>
       </div>
 
-      <button class="btn-w" id="depBtn" style="width: 100%; padding: 12px;" onclick="doDeposit()">ПОПОЛНИТЬ</button>
+      <button class="btn-w" id="depBtn" style="width: 100%; padding: 12px;" onclick="doDeposit()">ОПЛАТИТЬ 10 ⭐</button>
     </div>
   </section>
 
@@ -401,7 +451,7 @@
   </section>
 
   <footer class="footer">
-    <div><strong>VelvetVault</strong> • 2026</div>
+    <div><strong>Dark Store</strong> • 2026</div>
     <span onclick="showAlert('Политика конфиденциальности: данные используются только для выдачи заказов.', 'ok')">Политика конфиденциальности</span>
     <span onclick="showAlert('Пользовательское соглашение: проверяйте товар сразу после получения.', 'ok')">Пользовательское соглашение</span>
     <span onclick="showAlert('Политика возврата: обращения по заказам — в @gerulev.', 'ok')">Политика возврата</span>
@@ -425,7 +475,29 @@
     const userId = tgUser ? Number(tgUser.id) : 622034883;
     const firstName = (tgUser && tgUser.first_name) || "Михаил";
     const username = (tgUser && tgUser.username) ? `@${tgUser.username}` : "@gerulev";
-    const STORE_KEY = `vv_orders_${userId}`;
+    const STORE_KEY = `ds_orders_${userId}`;
+
+    let pct = 0;
+    const pctTimer = setInterval(() => {
+      pct = Math.min(92, pct + 18);
+      const pEl = document.getElementById("splashPct");
+      const fEl = document.getElementById("splashFill");
+      if (pEl) pEl.textContent = `${pct}%`;
+      if (fEl) fEl.style.width = `${pct}%`;
+    }, 70);
+
+    function closeSplash() {
+      clearInterval(pctTimer);
+      const pEl = document.getElementById("splashPct");
+      const fEl = document.getElementById("splashFill");
+      if (pEl) pEl.textContent = "100%";
+      if (fEl) fEl.style.width = "100%";
+      setTimeout(() => {
+        const sp = document.getElementById("splash");
+        if (sp) sp.classList.add("hide");
+      }, 120);
+    }
+    setTimeout(closeSplash, 650);
 
     let state = {
       balance_rub: 0,
@@ -533,10 +605,10 @@
       const btn = document.getElementById("depBtn");
       if (method === "stars") {
         const rub = (amt * Number(state.rub_per_star || 1.6)).toFixed(2);
-        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} ⭐ (+${rub} ₽)` : "УКАЖИ СУММУ";
+        btn.textContent = amt > 0 ? `ОПЛАТИТЬ ${amt} ⭐ (+${rub} ₽)` : "УКАЖИ СУММУ";
       } else {
         const rub = (amt * Number(state.rub_per_ton || 450)).toFixed(2);
-        btn.textContent = amt > 0 ? `ПОПОЛНИТЬ НА ${amt} TON (+${rub} ₽)` : "УКАЖИ СУММУ";
+        btn.textContent = amt > 0 ? `ОТПРАВИТЬ ЗАЯВКУ ${amt} TON (~${rub} ₽)` : "УКАЖИ СУММУ";
       }
     }
 
@@ -608,18 +680,23 @@
       document.getElementById("uName").textContent = firstName;
       document.getElementById("uMeta").textContent = `${username} • ID: ${userId}`;
       document.getElementById("rateStars").textContent = `1 ⭐ = ${state.rub_per_star} ₽`;
-      document.getElementById("rateTon").textContent = `1 TON = ${state.rub_per_ton} ₽`;
+      document.getElementById("rateTon").textContent = `1 TON = ${state.rub_per_ton} ₽ • Зачисление после перевода`;
       document.getElementById("tonAddr").textContent = state.crypto_wallet || "";
 
       const known = new Set(myOrders.map((x) => String(x.order_id || "")));
-      (state.orders || []).forEach((txt, i) => {
-        const s = String(txt || "");
-        const m = s.match(/(ORD-[A-Za-z0-9]+)/);
-        const oid = m ? m[1] : `ORD-H-${i + 1}`;
-        if (!known.has(oid)) {
-          const pm = s.match(/(\+\d{6,16})/);
-          myOrders.push({ order_id: oid, title: s, phone: pm ? pm[1] : "", two_fa: "", code: "" });
-          known.add(oid);
+      (state.orders || []).forEach((entry, i) => {
+        if (typeof entry === "object" && entry !== null) {
+          const oid = String(entry.order_id || `ORD-H-${i + 1}`);
+          if (!known.has(oid)) {
+            myOrders.push({
+              order_id: oid,
+              title: entry.title || "Аккаунт",
+              phone: entry.phone || "",
+              two_fa: entry.two_fa || "",
+              code: entry.code || ""
+            });
+            known.add(oid);
+          }
         }
       });
       saveOrders();
@@ -638,6 +715,8 @@
         }
       } catch (e) {
         renderAll();
+      } finally {
+        closeSplash();
       }
     }
 
@@ -716,7 +795,22 @@
           showAlert((data && data.error) || "Ошибка пополнения", "err");
           return;
         }
-        showAlert(`Баланс пополнен: ${Number(data.balance_rub).toFixed(2)} ₽`, "ok");
+        if (method === "stars" && data.invoice_link && tg && tg.openInvoice) {
+          tg.openInvoice(data.invoice_link, async (status) => {
+            if (status === "paid") {
+              showAlert("Оплата звёздами прошла! Обновляем баланс...", "ok");
+              setTimeout(syncState, 1200);
+            } else {
+              showAlert("Оплата звёздами не завершена.", "err");
+            }
+          });
+          return;
+        }
+        if (method === "stars" && data.sent_to_bot) {
+          showAlert("Счёт на оплату звёздами отправлен в чат с ботом.", "ok");
+          return;
+        }
+        showAlert(`Заявка отправлена. Переведи ${amt} TON на кошелёк — баланс начислится после проверки.`, "ok");
         await syncState();
       } catch (e) {
         showAlert("Ошибка сети при пополнении", "err");
