@@ -205,7 +205,7 @@ def build_state_payload(user_id: int) -> dict:
 def get_welcome_text() -> str:
     return (
         "👋 <b>Привет, @gerulev</b>\n\n"
-        "Добро пожаловать в <b>UKISHOP</b>.\n\n"
+        "Добро пожаловать в <b>Dark Store</b>.\n\n"
         "Выберите интересующий раздел в меню ниже:\n\n"
         f"📊 <b>Продано аккаунтов:</b> {TOTAL_SOLD_COUNT}"
     )
