@@ -253,7 +253,7 @@ def _format_user_label(user) -> str:
 def get_welcome_text(user=None) -> str:
     user_label = _format_user_label(user)
     return (
-        f"🌑 <b>Привет, {user_label} — добро пожаловать в Dark Store.</b>\n\n"
+        f"🌑 <b>Привет, {user_label} — добро пожаловать в DarkHub.</b>\n\n"
         "Здесь собраны актуальные позиции, быстрая выдача сразу после оформления "
         "и прямой контакт с поддержкой без лишней суеты. "
         "Открывай каталог, смотри наличие и забирай нужный вариант в пару кликов.\n\n"
