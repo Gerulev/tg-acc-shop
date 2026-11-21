@@ -3,235 +3,411 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Dark Store</title>
+  <title>DARK STORE — Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: #0c0609;
-      --card: #190c12;
-      --card-2: #24111a;
-      --border: #431e2e;
-      --text: #fff6fa;
-      --muted: #b994a4;
-      --white: #ffffff;
-      --dark: #15080e;
-      --rose: #e12d53;
-      --ok: #5be39b;
-      --err: #ff5c77;
+      --bg: #07080d;
+      --surface: #0e1018;
+      --surface-2: #151926;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(0, 240, 255, 0.35);
+      --text: #f4f6fb;
+      --muted: #8a93a8;
+      --accent: #00e5ff;
+      --accent-2: #7b61ff;
+      --ok: #18e09c;
+      --warn: #ffb84d;
+      --danger: #ff4d6d;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
     }
 
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
 
-    body {
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
       background:
-        radial-gradient(circle at 50% -10%, rgba(225, 45, 83, 0.22), transparent 46%),
+        radial-gradient(circle at 12% -5%, rgba(0, 229, 255, 0.16), transparent 42%),
+        radial-gradient(circle at 92% 8%, rgba(123, 97, 255, 0.16), transparent 45%),
         var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      padding: 14px 14px 96px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Inter, sans-serif;
+      overflow-x: hidden;
     }
 
-    .splash {
+    /* Свежий экран загрузки */
+    #preloader {
       position: fixed;
       inset: 0;
       z-index: 999;
-      background:
-        radial-gradient(circle at 50% 34%, rgba(225, 45, 83, 0.28), transparent 55%),
-        #0b0508;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      padding: 24px;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
+      gap: 18px;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(0, 229, 255, 0.14), transparent 55%),
+        #06070b;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
     }
-    .splash.hide {
+
+    #preloader.hidden {
       opacity: 0;
       visibility: hidden;
+      pointer-events: none;
     }
-    .splash-mark {
-      width: 72px;
-      height: 72px;
-      border-radius: 22px;
-      background: linear-gradient(145deg, #2d101c, #16070d);
-      border: 1.5px solid rgba(255, 255, 255, 0.22);
-      box-shadow: 0 0 38px rgba(225, 45, 83, 0.35);
+
+    .loader-core {
+      position: relative;
+      width: 84px;
+      height: 84px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #121624, #0a0c14);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      box-shadow: 0 0 36px rgba(0, 229, 255, 0.22), inset 0 0 18px rgba(123, 97, 255, 0.18);
       display: grid;
       place-items: center;
-      font-size: 26px;
-      font-weight: 900;
+      animation: floatPulse 2.2s ease-in-out infinite;
     }
-    .splash-title {
+
+    .loader-ring {
+      position: absolute;
+      inset: -7px;
+      border-radius: 29px;
+      border: 2px solid transparent;
+      border-top-color: var(--accent);
+      border-right-color: var(--accent-2);
+      animation: spinRing 1.1s linear infinite;
+    }
+
+    .loader-brand {
+      font-weight: 900;
       font-size: 22px;
-      font-weight: 900;
-      letter-spacing: 1px;
+      letter-spacing: 0.08em;
+      background: linear-gradient(135deg, #ffffff 15%, var(--accent) 85%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .splash-pct {
-      font-size: 13px;
+
+    .loader-title {
+      font-size: 15px;
       font-weight: 800;
-      color: var(--muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text);
     }
-    .splash-bar {
-      width: 200px;
-      height: 5px;
-      border-radius: 99px;
-      background: rgba(255, 255, 255, 0.12);
+
+    .loader-sub {
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 16px;
+    }
+
+    .loader-bar {
+      width: 210px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
       overflow: hidden;
     }
-    .splash-bar > div {
+
+    .loader-bar > span {
+      display: block;
       height: 100%;
-      width: 0%;
-      border-radius: 99px;
-      background: linear-gradient(90deg, var(--rose), #ffffff);
-      transition: width 0.14s ease;
+      width: 35%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      animation: barSlide 1.35s ease-in-out infinite;
+    }
+
+    @keyframes spinRing {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes floatPulse {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    @keyframes barSlide {
+      0% { transform: translateX(-80%); width: 45%; }
+      50% { transform: translateX(110%); width: 65%; }
+      100% { transform: translateX(260%); width: 45%; }
+    }
+
+    /* Основной контейнер */
+    .app {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 14px 14px 92px;
     }
 
     .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      border-radius: var(--radius-lg);
+      background: rgba(12, 15, 24, 0.82);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 13px;
+      color: #05070c;
+      background: linear-gradient(135deg, var(--accent), #7df9ff);
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.35);
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      color: var(--ok);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-bal {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .btn-ghost {
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-ghost:active {
+      transform: scale(0.97);
+    }
+
+    .section {
+      display: none;
+      animation: fadeUp 0.24s ease;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-card {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.11), rgba(123, 97, 255, 0.11));
+      border: 1px solid rgba(0, 229, 255, 0.22);
       margin-bottom: 14px;
     }
 
-    .brand { font-size: 18px; font-weight: 800; }
-    .top-actions { display: flex; align-items: center; gap: 8px; }
-
-    .pill {
-      background: var(--card-2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 12px;
-      padding: 8px 12px;
-      font-size: 13px;
+    .hero-title {
+      margin: 0 0 6px;
+      font-size: 20px;
       font-weight: 800;
-      cursor: pointer;
     }
 
-    .alert {
-      background: var(--card-2);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 11px 13px;
+    .hero-desc {
+      margin: 0;
       font-size: 13px;
       line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .controls-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
       margin-bottom: 12px;
     }
-    .alert.ok { border-color: rgba(91, 227, 155, 0.5); color: var(--ok); }
-    .alert.err { border-color: rgba(255, 92, 119, 0.5); color: var(--err); }
 
-    .section-title { font-size: 21px; font-weight: 900; margin-bottom: 4px; }
-    .section-sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
-
-    .input {
+    .input, .select {
       width: 100%;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
       padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--border);
       color: var(--text);
       font-size: 14px;
       outline: none;
-      margin-bottom: 10px;
     }
 
-    .toolbar {
+    .input:focus, .select:focus {
+      border-color: var(--accent);
+    }
+
+    .stats-strip {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 12px;
-      font-size: 12.5px;
+      align-items: center;
+      font-size: 12px;
       color: var(--muted);
-    }
-
-    .select {
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 11px;
-      padding: 7px 10px;
-      font-size: 12.5px;
-      font-weight: 700;
-      outline: none;
+      margin-bottom: 12px;
+      padding: 0 2px;
     }
 
     .card {
-      background: var(--card);
+      padding: 15px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
       margin-bottom: 10px;
     }
 
-    .item-row {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 10px;
+    .item-top {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: flex-start;
       gap: 12px;
+      margin-bottom: 8px;
     }
 
-    .item-title { font-size: 15.5px; font-weight: 800; margin-bottom: 3px; }
-    .item-desc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
-    .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex-shrink: 0; }
-    .item-price { font-size: 16px; font-weight: 900; }
-
-    .btn-w {
-      background: var(--white);
-      color: var(--dark);
-      border: none;
-      border-radius: 12px;
-      padding: 9px 14px;
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .btn-w:disabled { opacity: 0.45; cursor: not-allowed; }
-
-    .btn-d {
-      background: var(--card-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 8px 11px;
-      font-size: 12px;
+    .item-title {
+      font-size: 16px;
       font-weight: 700;
-      cursor: pointer;
+      margin: 0 0 4px;
     }
 
-    .two-col {
+    .item-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .price-pill {
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.28);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .item-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      gap: 10px;
+    }
+
+    .stock-tag {
+      font-size: 12px;
+      color: var(--ok);
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      padding: 11px 16px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: linear-gradient(135deg, var(--accent), #52b6ff);
+      color: #05070d;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 229, 255, 0.22);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .method-switch {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-      margin: 12px 0;
+      margin-bottom: 12px;
     }
 
-    .seg {
-      background: var(--card-2);
+    .method-btn {
+      padding: 11px;
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
       border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: 12px;
-      padding: 10px;
+      color: var(--text);
+      font-weight: 700;
       font-size: 13px;
-      font-weight: 800;
       cursor: pointer;
     }
-    .seg.active {
-      background: var(--white);
-      color: var(--dark);
-      border-color: var(--white);
+
+    .method-btn.active {
+      background: rgba(0, 229, 255, 0.14);
+      border-color: var(--accent);
+      color: var(--accent);
     }
 
     .presets {
@@ -241,587 +417,570 @@
       margin-bottom: 10px;
     }
 
-    .pre {
-      background: var(--card-2);
+    .preset-btn {
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
       border: 1px solid var(--border);
       color: var(--text);
-      border-radius: 12px;
-      padding: 10px 6px;
-      font-size: 13px;
       font-weight: 700;
+      font-size: 13px;
       cursor: pointer;
     }
-    .pre.active { border-color: var(--white); }
 
-    .mono-box {
-      background: var(--card-2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-size: 12px;
-      font-family: monospace;
-      word-break: break-all;
-      margin-bottom: 10px;
-      user-select: all;
+    .preset-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
     }
 
-    .code-res {
-      margin-top: 8px;
-      background: var(--card-2);
-      border: 1px solid rgba(91, 227, 155, 0.45);
-      border-radius: 12px;
+    .code-box {
+      margin-top: 10px;
       padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(24, 224, 156, 0.1);
+      border: 1px solid rgba(24, 224, 156, 0.3);
       font-size: 13px;
       color: var(--ok);
-      font-family: monospace;
-    }
-
-    .list-btn {
-      width: 100%;
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 14px;
-      padding: 13px 14px;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13.5px;
       font-weight: 700;
-      cursor: pointer;
     }
 
-    .footer {
-      margin-top: 18px;
+    .empty-box {
+      text-align: center;
+      padding: 28px 16px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .footer-links {
+      margin-top: 22px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
       font-size: 12px;
       color: var(--muted);
-      line-height: 1.7;
-    }
-    .footer span {
-      color: var(--text);
-      text-decoration: underline;
-      display: block;
-      margin-top: 4px;
-      cursor: pointer;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
     }
 
-    .dock {
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .bottom-nav {
       position: fixed;
       left: 0;
       right: 0;
       bottom: 0;
-      background: #14090e;
-      border-top: 1px solid var(--border);
-      padding: 7px 6px 13px;
+      z-index: 50;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
-      z-index: 40;
+      background: rgba(10, 12, 20, 0.92);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid var(--border);
+      padding: 6px 4px max(8px, env(safe-area-inset-bottom));
     }
 
-    .dock-btn {
-      background: transparent;
+    .nav-item {
+      background: none;
       border: none;
       color: var(--muted);
-      border-radius: 12px;
-      padding: 7px 2px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 3px;
-      font-size: 10.5px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 2px;
       cursor: pointer;
     }
-    .dock-btn.active {
-      background: var(--card-2);
-      color: var(--text);
+
+    .nav-item .ico {
+      font-size: 16px;
+      line-height: 1;
     }
 
-    .hidden { display: none; }
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 78px;
+      transform: translateX(-50%) translateY(14px);
+      z-index: 120;
+      max-width: 90%;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #171c2c;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
-  <div class="splash" id="splash">
-    <div class="splash-mark">DS</div>
-    <div class="splash-title">DARK STORE</div>
-    <div class="splash-pct" id="splashPct">0%</div>
-    <div class="splash-bar"><div id="splashFill"></div></div>
-    <button class="btn-d" style="margin-top: 6px;" onclick="closeSplash()">Войти</button>
+  <!-- Загрузочный экран -->
+  <div id="preloader">
+    <div class="loader-core">
+      <div class="loader-ring"></div>
+      <div class="loader-brand">DS</div>
+    </div>
+    <div class="loader-title">DARK STORE</div>
+    <div class="loader-bar"><span></span></div>
+    <div class="loader-sub" id="loaderStatus">Подключаем витрину...</div>
   </div>
 
-  <header class="topbar">
-    <div class="brand">Dark Store</div>
-    <div class="top-actions">
-      <button class="pill" id="topBal" onclick="openTab('deposit')">0.00 ₽</button>
-      <button class="pill" onclick="openSupport()">Поддержка</button>
-    </div>
-  </header>
-
-  <div id="alertBox" class="alert hidden"></div>
-
-  <section id="tab-shop">
-    <div class="section-title">Магазин</div>
-    <div class="section-sub">Единый баланс в ₽</div>
-
-    <input class="input" id="qInput" type="text" placeholder="Поиск..." />
-
-    <div class="toolbar">
-      <span id="stockInfo">0 шт. • 0 поз.</span>
-      <select class="select" id="sortSel" onchange="drawShop()">
-        <option value="std">По порядку</option>
-        <option value="asc">Дешевле</option>
-        <option value="desc">Дороже</option>
-      </select>
-    </div>
-
-    <div id="shopList"></div>
-  </section>
-
-  <section id="tab-my" class="hidden">
-    <div class="section-title">Мои покупки</div>
-    <div class="section-sub">Нажми «Получить код» для входа в аккаунт</div>
-    <div id="myList"></div>
-  </section>
-
-  <section id="tab-deposit" class="hidden">
-    <div class="card">
-      <div class="item-title" style="font-size: 17px;">Пополнение (в ₽)</div>
-      <div class="item-desc">Баланс: <strong id="depBal" style="color: var(--text);">0.00 ₽</strong></div>
-
-      <div class="two-col">
-        <button class="seg active" id="segStars" onclick="setMethod('stars')">⭐ Звёзды → ₽</button>
-        <button class="seg" id="segTon" onclick="setMethod('ton')">💎 TON → ₽</button>
-      </div>
-
-      <div id="boxStars">
-        <div class="presets">
-          <button class="pre active" onclick="setPreset(10, this)">10 ⭐</button>
-          <button class="pre" onclick="setPreset(25, this)">25 ⭐</button>
-          <button class="pre" onclick="setPreset(50, this)">50 ⭐</button>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand-box">
+        <div class="brand-badge">DS</div>
+        <div>
+          <div class="brand-name">Dark Store</div>
+          <div class="brand-tag" id="soldCounterTag">Продано: 0</div>
         </div>
-        <input class="input" id="inpStars" type="number" min="1" step="1" placeholder="Своё число звёзд" oninput="onCustom('stars')" />
-        <div class="item-desc" id="rateStars" style="margin-bottom: 10px;">1 ⭐ = 1.6 ₽</div>
+      </div>
+      <div class="top-actions">
+        <div class="pill-bal" id="topBalance">0.00 ₽</div>
+        <button class="btn-ghost" onclick="openSupport()">Чат</button>
+      </div>
+    </header>
+
+    <!-- Магазин -->
+    <section id="sec-shop" class="section active">
+      <div class="hero-card">
+        <h1 class="hero-title">Каталог позиций</h1>
+        <p class="hero-desc">Мгновенная выдача после покупки и получение кодов входа прямо в приложении.</p>
       </div>
 
-      <div id="boxTon" class="hidden">
-        <div class="presets">
-          <button class="pre active" onclick="setPreset(0.5, this)">0.5 TON</button>
-          <button class="pre" onclick="setPreset(1, this)">1 TON</button>
-          <button class="pre" onclick="setPreset(2, this)">2 TON</button>
+      <div class="controls-row">
+        <input id="searchInput" class="input" type="text" placeholder="Поиск по названию или описанию..." oninput="renderCatalog()" />
+        <select id="sortSelect" class="select" onchange="renderCatalog()">
+          <option value="default">По порядку</option>
+          <option value="price_asc">Дешевле</option>
+          <option value="price_desc">Дороже</option>
+        </select>
+      </div>
+
+      <div class="stats-strip">
+        <span id="catalogSummary">0 шт. • 0 поз.</span>
+        <button class="btn-ghost" onclick="refreshState(true)">Обновить</button>
+      </div>
+
+      <div id="catalogList"></div>
+    </section>
+
+    <!-- Мои покупки -->
+    <section id="sec-orders" class="section">
+      <div class="hero-card">
+        <h1 class="hero-title">Мои покупки</h1>
+        <p class="hero-desc">Нажмите «Получить код», чтобы подтянуть свежий код входа по заказу.</p>
+      </div>
+      <div id="ordersList"></div>
+    </section>
+
+    <!-- Пополнение -->
+    <section id="sec-deposit" class="section">
+      <div class="hero-card">
+        <h1 class="hero-title">Пополнение баланса</h1>
+        <p class="hero-desc">Текущий баланс: <strong id="depBalance">0.00 ₽</strong></p>
+      </div>
+
+      <div class="card">
+        <div class="method-switch">
+          <button id="mStars" class="method-btn active" onclick="setDepositMethod('stars')">⭐ Звёзды → ₽</button>
+          <button id="mTon" class="method-btn" onclick="setDepositMethod('ton')">💎 TON → ₽</button>
         </div>
-        <input class="input" id="inpTon" type="number" min="0.01" step="0.01" placeholder="Своя сумма TON" oninput="onCustom('ton')" />
-        <div class="mono-box" id="tonAddr">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
-        <div class="item-desc" id="rateTon" style="margin-bottom: 10px;">1 TON = 115 ₽ • Зачисление после перевода</div>
+
+        <div id="presetsBox" class="presets">
+          <button class="preset-btn active" onclick="pickPreset(10, this)">10 ⭐</button>
+          <button class="preset-btn" onclick="pickPreset(25, this)">25 ⭐</button>
+          <button class="preset-btn" onclick="pickPreset(50, this)">50 ⭐</button>
+        </div>
+
+        <input id="depAmountInput" class="input" type="number" min="1" step="any" value="10" placeholder="Введите сумму" oninput="updateDepositPreview()" style="margin-bottom: 10px;" />
+
+        <div id="tonWalletInfo" style="display:none; font-size:12px; color:var(--muted); margin-bottom:10px; word-break:break-all;">
+          Кошелёк TON: <strong id="tonWalletAddr" style="color:var(--text);">—</strong>
+        </div>
+
+        <div style="font-size:12px; color:var(--muted); margin-bottom:12px;" id="rateInfo">
+          Курс: 1 ⭐ = 1.6 ₽
+        </div>
+
+        <button id="depSubmitBtn" class="btn-primary" style="width:100%;" onclick="submitDeposit()">
+          ОПЛАТИТЬ 10 ⭐ (+16.00 ₽)
+        </button>
+      </div>
+    </section>
+
+    <!-- Профиль -->
+    <section id="sec-profile" class="section">
+      <div class="hero-card">
+        <h1 class="hero-title" id="profName">Покупатель</h1>
+        <p class="hero-desc" id="profMeta">@gerulev • ID: 622034883</p>
+        <p class="hero-desc" style="margin-top:8px; color:var(--text);">
+          Баланс: <strong id="profBalance">0.00 ₽</strong> • Заказов: <strong id="profOrdersCount">0</strong>
+        </p>
       </div>
 
-      <button class="btn-w" id="depBtn" style="width: 100%; padding: 12px;" onclick="doDeposit()">ОПЛАТИТЬ 10 ⭐</button>
-    </div>
-  </section>
+      <button class="btn-secondary" onclick="switchTab('deposit')">
+        <span>💳 Пополнить баланс</span>
+        <span>›</span>
+      </button>
+      <button class="btn-secondary" onclick="openSupport()">
+        <span>🆘 Поддержка (@gerulev)</span>
+        <span>↗</span>
+      </button>
+      <button class="btn-secondary" onclick="refreshState(true)">
+        <span>🔄 Обновить данные</span>
+        <span>↻</span>
+      </button>
+    </section>
 
-  <section id="tab-profile" class="hidden">
-    <div class="card">
-      <div class="item-title" style="font-size: 17px;" id="uName">Михаил</div>
-      <div class="item-desc" id="uMeta">@gerulev • ID: 622034883</div>
-      <div class="item-desc" style="margin-top: 8px;">Баланс: <strong id="pBal" style="color: var(--text);">0.00 ₽</strong> • Заказов: <strong id="pOrd" style="color: var(--text);">0</strong></div>
-    </div>
+    <!-- Помощь -->
+    <section id="sec-help" class="section">
+      <div class="hero-card">
+        <h1 class="hero-title">Поддержка и инфо</h1>
+        <p class="hero-desc">По вопросам выдачи аккаунтов, пополнений и кодов входа пишите напрямую в поддержку.</p>
+      </div>
 
-    <button class="list-btn" onclick="openTab('deposit')">
-      <span>Пополнить баланс</span>
-      <span>›</span>
+      <button class="btn-secondary" onclick="openSupport()">
+        <span>Написать @gerulev</span>
+        <span>↗</span>
+      </button>
+    </section>
+
+    <footer class="footer-links">
+      <span>Dark Store • 2026</span>
+      <a href="#" onclick="showToast('Политика конфиденциальности актуальна в боте'); return false;">Конфиденциальность</a>
+      <a href="#" onclick="showToast('Условия использования актуальны в боте'); return false;">Соглашение</a>
+    </footer>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="shop" onclick="switchTab('shop')">
+      <span class="ico">🛍</span>
+      <span>Магазин</span>
     </button>
-    <button class="list-btn" onclick="openSupport()">
-      <span>Поддержка (@gerulev)</span>
-      <span>↗</span>
+    <button class="nav-item" data-tab="orders" onclick="switchTab('orders')">
+      <span class="ico">📦</span>
+      <span>Мои</span>
     </button>
-    <button class="list-btn" onclick="syncState()">
-      <span>Обновить</span>
-      <span>↻</span>
+    <button class="nav-item" data-tab="deposit" onclick="switchTab('deposit')">
+      <span class="ico">₽</span>
+      <span>Пополнить</span>
     </button>
-  </section>
-
-  <section id="tab-support" class="hidden">
-    <div class="section-title">Поддержка</div>
-    <div class="section-sub">По вопросам покупок и кодов входа</div>
-    <button class="list-btn" onclick="openSupport()">
-      <span>Написать @gerulev</span>
-      <span>↗</span>
+    <button class="nav-item" data-tab="profile" onclick="switchTab('profile')">
+      <span class="ico">👤</span>
+      <span>Профиль</span>
     </button>
-  </section>
-
-  <footer class="footer">
-    <div><strong>Dark Store</strong> • 2026</div>
-    <span onclick="showAlert('Политика конфиденциальности: данные используются только для выдачи заказов.', 'ok')">Политика конфиденциальности</span>
-    <span onclick="showAlert('Пользовательское соглашение: проверяйте товар сразу после получения.', 'ok')">Пользовательское соглашение</span>
-    <span onclick="showAlert('Политика возврата: обращения по заказам — в @gerulev.', 'ok')">Политика возврата</span>
-  </footer>
-
-  <nav class="dock">
-    <button class="dock-btn active" id="d-shop" onclick="openTab('shop')"><span>🛍</span><span>Магазин</span></button>
-    <button class="dock-btn" id="d-my" onclick="openTab('my')"><span>📦</span><span>Мои</span></button>
-    <button class="dock-btn" id="d-deposit" onclick="openTab('deposit')"><span>₽</span><span>Пополнить</span></button>
-    <button class="dock-btn" id="d-profile" onclick="openTab('profile')"><span>👤</span><span>Профиль</span></button>
-    <button class="dock-btn" id="d-support" onclick="openTab('support')"><span>💬</span><span>Помощь</span></button>
+    <button class="nav-item" data-tab="help" onclick="switchTab('help')">
+      <span class="ico">💬</span>
+      <span>Помощь</span>
+    </button>
   </nav>
 
+  <div id="toast" class="toast"></div>
+
   <script>
-    const API_BASE = "https://tg-acc-shop.onrender.com";
-    const SUPPORT_URL = "https://t.me/gerulev";
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-    if (tg) { tg.ready(); tg.expand(); }
-
-    const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
-    const userId = tgUser ? Number(tgUser.id) : 622034883;
-    const firstName = (tgUser && tgUser.first_name) || "Михаил";
-    const username = (tgUser && tgUser.username) ? `@${tgUser.username}` : "@gerulev";
-    const STORE_KEY = `ds_orders_${userId}`;
-
-    let pct = 0;
-    const pctTimer = setInterval(() => {
-      pct = Math.min(92, pct + 18);
-      const pEl = document.getElementById("splashPct");
-      const fEl = document.getElementById("splashFill");
-      if (pEl) pEl.textContent = `${pct}%`;
-      if (fEl) fEl.style.width = `${pct}%`;
-    }, 70);
-
-    function closeSplash() {
-      clearInterval(pctTimer);
-      const pEl = document.getElementById("splashPct");
-      const fEl = document.getElementById("splashFill");
-      if (pEl) pEl.textContent = "100%";
-      if (fEl) fEl.style.width = "100%";
-      setTimeout(() => {
-        const sp = document.getElementById("splash");
-        if (sp) sp.classList.add("hide");
-      }, 120);
+    if (tg) {
+      tg.ready();
+      tg.expand();
     }
-    setTimeout(closeSplash, 650);
 
-    let state = {
+    const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+    const USER_ID = tgUser && tgUser.id ? Number(tgUser.id) : 622034883;
+    const API_BASE = window.location.origin;
+
+    const state = {
       balance_rub: 0,
       rub_per_star: 1.6,
-      rub_per_ton: 115.0,
-      crypto_wallet: "UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux",
+      rub_per_ton: 115,
+      crypto_wallet: "",
+      total_sold_count: 0,
+      items: [],
       orders: [],
-      items: []
+      depMethod: "stars",
     };
 
-    let myOrders = loadOrders();
-    let method = "stars";
-    let preset = 10;
-
-    function loadOrders() {
-      try {
-        const raw = localStorage.getItem(STORE_KEY);
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-      } catch (e) { return []; }
-    }
-
-    function saveOrders() {
-      try { localStorage.setItem(STORE_KEY, JSON.stringify(myOrders)); } catch (e) {}
-    }
-
-    function showAlert(msg, kind = "ok") {
-      const el = document.getElementById("alertBox");
+    function showToast(msg) {
+      const el = document.getElementById("toast");
       el.textContent = msg;
-      el.className = `alert ${kind}`;
-      el.classList.remove("hidden");
-    }
-
-    function clearAlert() {
-      document.getElementById("alertBox").classList.add("hidden");
+      el.classList.add("show");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
     }
 
     function openSupport() {
-      if (tg && tg.openTelegramLink) tg.openTelegramLink(SUPPORT_URL);
-      else window.open(SUPPORT_URL, "_blank");
+      const url = "https://t.me/gerulev";
+      if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+      else window.open(url, "_blank");
     }
 
-    function openTab(tab) {
-      ["shop", "my", "deposit", "profile", "support"].forEach((t) => {
-        document.getElementById(`tab-${t}`).classList.toggle("hidden", t !== tab);
-        document.getElementById(`d-${t}`).classList.toggle("active", t === tab);
-      });
-      syncState();
+    function switchTab(tabName) {
+      document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
+      const sec = document.getElementById("sec-" + tabName);
+      const nav = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+      if (sec) sec.classList.add("active");
+      if (nav) nav.classList.add("active");
     }
 
-    function setMethod(m) {
-      method = m;
-      document.getElementById("segStars").classList.toggle("active", m === "stars");
-      document.getElementById("segTon").classList.toggle("active", m === "ton");
-      document.getElementById("boxStars").classList.toggle("hidden", m !== "stars");
-      document.getElementById("boxTon").classList.toggle("hidden", m !== "ton");
-      if (m === "stars") {
-        document.getElementById("inpStars").value = "";
-        preset = 10;
-        document.querySelectorAll("#boxStars .pre").forEach((b, i) => b.classList.toggle("active", i === 0));
-      } else {
-        document.getElementById("inpTon").value = "";
-        preset = 0.5;
-        document.querySelectorAll("#boxTon .pre").forEach((b, i) => b.classList.toggle("active", i === 0));
+    function escHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderAll() {
+      const balStr = `${Number(state.balance_rub || 0).toFixed(2)} ₽`;
+      document.getElementById("topBalance").textContent = balStr;
+      document.getElementById("depBalance").textContent = balStr;
+      document.getElementById("profBalance").textContent = balStr;
+      document.getElementById("soldCounterTag").textContent = `Продано: ${state.total_sold_count || 0}`;
+
+      const fullName = tgUser
+        ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ") || "Покупатель"
+        : "Михаил";
+      const uname = tgUser && tgUser.username ? `@${tgUser.username}` : "@gerulev";
+      document.getElementById("profName").textContent = fullName;
+      document.getElementById("profMeta").textContent = `${uname} • ID: ${USER_ID}`;
+      document.getElementById("profOrdersCount").textContent = (state.orders || []).length;
+
+      if (state.crypto_wallet) {
+        document.getElementById("tonWalletAddr").textContent = state.crypto_wallet;
       }
-      refreshDepBtn();
+
+      renderCatalog();
+      renderOrders();
+      updateDepositPreview();
     }
 
-    function setPreset(val, btn) {
-      preset = Number(val);
-      const wrap = method === "stars" ? "#boxStars" : "#boxTon";
-      document.querySelectorAll(`${wrap} .pre`).forEach((b) => b.classList.remove("active"));
-      if (btn) btn.classList.add("active");
-      if (method === "stars") document.getElementById("inpStars").value = "";
-      else document.getElementById("inpTon").value = "";
-      refreshDepBtn();
-    }
-
-    function onCustom(m) {
-      const inp = document.getElementById(m === "stars" ? "inpStars" : "inpTon");
-      const val = parseFloat(String(inp.value || "").replace(",", ".").trim());
-      const wrap = m === "stars" ? "#boxStars" : "#boxTon";
-      if (!isNaN(val) && val > 0) {
-        document.querySelectorAll(`${wrap} .pre`).forEach((b) => b.classList.remove("active"));
-        preset = m === "stars" ? Math.floor(val) : val;
-      } else {
-        preset = m === "stars" ? 10 : 0.5;
-      }
-      refreshDepBtn();
-    }
-
-    function getAmount() {
-      if (method === "stars") {
-        const raw = String(document.getElementById("inpStars").value || "").trim();
-        if (raw) return parseInt(raw, 10) || 0;
-        return parseInt(preset, 10) || 0;
-      }
-      const raw = String(document.getElementById("inpTon").value || "").replace(",", ".").trim();
-      if (raw) return parseFloat(raw) || 0;
-      return parseFloat(preset) || 0;
-    }
-
-    function refreshDepBtn() {
-      const amt = getAmount();
-      const btn = document.getElementById("depBtn");
-      if (method === "stars") {
-        const rub = (amt * Number(state.rub_per_star || 1.6)).toFixed(2);
-        btn.textContent = amt > 0 ? `ОПЛАТИТЬ ${amt} ⭐ (+${rub} ₽)` : "УКАЖИ СУММУ";
-      } else {
-        const rub = (amt * Number(state.rub_per_ton || 115.0)).toFixed(2);
-        btn.textContent = amt > 0 ? `ОТПРАВИТЬ ЗАЯВКУ ${amt} TON (~${rub} ₽)` : "УКАЖИ СУММУ";
-      }
-    }
-
-    function esc(s) {
-      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
-
-    function drawShop() {
-      const items = state.items || [];
-      const total = items.reduce((a, b) => a + Number(b.count || 0), 0);
-      document.getElementById("stockInfo").textContent = `${total} шт. • ${items.length} поз.`;
-
-      const q = (document.getElementById("qInput").value || "").trim().toLowerCase();
-      let list = items.filter((it) => {
+    function renderCatalog() {
+      const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      const sort = document.getElementById("sortSelect").value;
+      let list = (state.items || []).filter((it) => {
         if (!q) return true;
         return (it.title || "").toLowerCase().includes(q) || (it.description || "").toLowerCase().includes(q);
       });
 
-      const s = document.getElementById("sortSel").value;
-      if (s === "asc") list = list.slice().sort((a, b) => Number(a.price_rub) - Number(b.price_rub));
-      if (s === "desc") list = list.slice().sort((a, b) => Number(b.price_rub) - Number(a.price_rub));
+      if (sort === "price_asc") list.sort((a, b) => Number(a.price_rub) - Number(b.price_rub));
+      if (sort === "price_desc") list.sort((a, b) => Number(b.price_rub) - Number(a.price_rub));
 
-      const box = document.getElementById("shopList");
+      const totalUnits = list.reduce((acc, x) => acc + Number(x.count || 0), 0);
+      document.getElementById("catalogSummary").textContent = `${totalUnits} шт. • ${list.length} поз.`;
+
+      const box = document.getElementById("catalogList");
       if (!list.length) {
-        box.innerHTML = `<div class="card"><div class="item-desc">Пока нет товаров в наличии.</div></div>`;
+        box.innerHTML = `<div class="empty-box">Сейчас подходящих товаров в наличии нет.</div>`;
         return;
       }
 
       box.innerHTML = list.map((it) => `
-        <div class="item-row">
-          <div>
-            <div class="item-title">${esc(it.title)}</div>
-            <div class="item-desc">${esc(it.description || "")}</div>
-            <div class="item-desc" style="margin-top: 4px;">В наличии: <strong style="color: var(--text);">${it.count} шт.</strong></div>
+        <div class="card">
+          <div class="item-top">
+            <div>
+              <h3 class="item-title">${escHtml(it.title)}</h3>
+              <p class="item-desc">${escHtml(it.description || "Готовая позиция к выдаче")}</p>
+            </div>
+            <div class="price-pill">${Number(it.price_rub).toFixed(0)} ₽</div>
           </div>
-          <div class="item-right">
-            <div class="item-price">${Number(it.price_rub).toFixed(0)} ₽</div>
-            <button class="btn-w" onclick="buyItem('${esc(it.key)}')">Купить</button>
+          <div class="item-bottom">
+            <span class="stock-tag">В наличии: ${Number(it.count)} шт.</span>
+            <button class="btn-primary" onclick="buyItem('${escHtml(it.key)}')">Купить</button>
           </div>
         </div>
       `).join("");
     }
 
-    function drawMy() {
-      const box = document.getElementById("myList");
-      document.getElementById("pOrd").textContent = String(myOrders.length);
-      if (!myOrders.length) {
-        box.innerHTML = `<div class="card"><div class="item-desc">Покупок пока нет.</div></div>`;
+    function renderOrders() {
+      const orders = state.orders || [];
+      const box = document.getElementById("ordersList");
+      if (!orders.length) {
+        box.innerHTML = `<div class="empty-box">У вас пока нет оформленных заказов.</div>`;
         return;
       }
-      box.innerHTML = myOrders.slice().reverse().map((o) => `
-        <div class="card">
-          <div class="item-title" style="font-family: monospace;">${esc(o.phone || o.title)}</div>
-          <div class="item-desc">${esc(o.title)} • ${esc(o.order_id)}</div>
-          ${o.two_fa ? `<div class="item-desc" style="margin-top: 4px;">2FA: <strong style="color: var(--text);">${esc(o.two_fa)}</strong></div>` : ""}
-          ${o.code ? `<div class="code-res">Код: <strong>${esc(o.code)}</strong></div>` : ""}
-          <div style="margin-top: 10px;">
-            <button class="btn-w" onclick="getCode('${esc(o.order_id)}')">Получить код</button>
+
+      box.innerHTML = [...orders].reverse().map((ord) => {
+        const oid = escHtml(ord.order_id || "");
+        const title = escHtml(ord.title || "Позиция");
+        const phone = escHtml(ord.phone || "—");
+        const codeHtml = ord.code
+          ? `<div class="code-box">Код входа: ${escHtml(ord.code)}</div>`
+          : "";
+        return `
+          <div class="card">
+            <div style="font-size:16px; font-weight:800; margin-bottom:4px;">${phone}</div>
+            <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">${title} • ${oid}</div>
+            <button class="btn-primary" onclick="requestCode('${oid}')">Получить код</button>
+            ${codeHtml}
           </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
-    function renderAll() {
-      const rub = Number(state.balance_rub || 0).toFixed(2);
-      document.getElementById("topBal").textContent = `${rub} ₽`;
-      document.getElementById("depBal").textContent = `${rub} ₽`;
-      document.getElementById("pBal").textContent = `${rub} ₽`;
-      document.getElementById("uName").textContent = firstName;
-      document.getElementById("uMeta").textContent = `${username} • ID: ${userId}`;
-      document.getElementById("rateStars").textContent = `1 ⭐ = ${state.rub_per_star} ₽`;
-      document.getElementById("rateTon").textContent = `1 TON = ${state.rub_per_ton} ₽ • Зачисление после перевода`;
-      document.getElementById("tonAddr").textContent = state.crypto_wallet || "";
-
-      const known = new Set(myOrders.map((x) => String(x.order_id || "")));
-      (state.orders || []).forEach((entry, i) => {
-        if (typeof entry === "object" && entry !== null) {
-          const oid = String(entry.order_id || `ORD-H-${i + 1}`);
-          if (!known.has(oid)) {
-            myOrders.push({
-              order_id: oid,
-              title: entry.title || "Аккаунт",
-              phone: entry.phone || "",
-              two_fa: entry.two_fa || "",
-              code: entry.code || ""
-            });
-            known.add(oid);
-          }
-        }
-      });
-      saveOrders();
-      refreshDepBtn();
-      drawShop();
-      drawMy();
+    function setDepositMethod(method) {
+      state.depMethod = method;
+      document.getElementById("mStars").classList.toggle("active", method === "stars");
+      document.getElementById("mTon").classList.toggle("active", method === "ton");
+      document.getElementById("presetsBox").style.display = method === "stars" ? "grid" : "none";
+      document.getElementById("tonWalletInfo").style.display = method === "ton" ? "block" : "none";
+      document.getElementById("depAmountInput").value = method === "stars" ? "10" : "1";
+      updateDepositPreview();
     }
 
-    async function syncState() {
-      try {
-        const res = await fetch(`${API_BASE}/api/state?user_id=${encodeURIComponent(userId)}`);
-        const data = await res.json();
-        if (data && data.ok) {
-          state = data;
-          renderAll();
-        }
-      } catch (e) {
-        renderAll();
-      } finally {
-        closeSplash();
+    function pickPreset(val, btn) {
+      document.querySelectorAll(".preset-btn").forEach((b) => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      document.getElementById("depAmountInput").value = String(val);
+      updateDepositPreview();
+    }
+
+    function updateDepositPreview() {
+      const raw = parseFloat(document.getElementById("depAmountInput").value || "0");
+      const amt = Number.isFinite(raw) && raw > 0 ? raw : 0;
+      const btn = document.getElementById("depSubmitBtn");
+      const rateEl = document.getElementById("rateInfo");
+
+      if (state.depMethod === "stars") {
+        const stars = Math.max(1, Math.round(amt || 10));
+        const rub = (stars * Number(state.rub_per_star || 1.6)).toFixed(2);
+        rateEl.textContent = `Курс: 1 ⭐ = ${state.rub_per_star} ₽`;
+        btn.textContent = `ОПЛАТИТЬ ${stars} ⭐ (+${rub} ₽)`;
+      } else {
+        const ton = amt > 0 ? amt : 1;
+        const rub = (ton * Number(state.rub_per_ton || 115)).toFixed(2);
+        rateEl.textContent = `Курс: 1 TON = ${state.rub_per_ton} ₽`;
+        btn.textContent = `ОТПРАВИТЬ ЗАЯВКУ ${ton} TON (~${rub} ₽)`;
       }
     }
 
     async function buyItem(itemKey) {
-      clearAlert();
       try {
         const res = await fetch(`${API_BASE}/api/buy`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId, item_key: itemKey, username })
+          body: JSON.stringify({ user_id: USER_ID, item_key: itemKey }),
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) {
-          showAlert((data && data.error) || "Ошибка покупки", "err");
+        if (!data.ok) {
+          showToast(data.error || "Ошибка покупки");
           return;
         }
-        const it = (state.items || []).find((x) => x.key === itemKey);
-        myOrders.push({
-          order_id: data.order_id || `ORD-${Date.now().toString().slice(-5)}`,
-          title: it ? it.title : "Аккаунт",
-          phone: data.phone || "",
-          two_fa: data.two_fa || "",
-          code: data.code || ""
-        });
-        saveOrders();
-        showAlert("Куплено! Перейди во вкладку «Мои», чтобы получить код.", "ok");
-        await syncState();
-        openTab("my");
+        showToast(`Выдан ${data.phone || "аккаунт"}`);
+        await refreshState(false);
+        switchTab("orders");
       } catch (e) {
-        showAlert("Ошибка сети при покупке", "err");
+        showToast("Ошибка соединения с сервером");
       }
     }
 
-    async function getCode(orderId) {
-      clearAlert();
-      const idx = myOrders.findIndex((x) => x.order_id === orderId);
-      if (idx === -1) return;
-      const ord = myOrders[idx];
-      try {
-        const res = await fetch(`${API_BASE}/api/code`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId, order_id: ord.order_id, phone: ord.phone, username })
-        });
-        const data = await res.json();
-        if (res.ok && data && data.ok && data.code) {
-          myOrders[idx].code = String(data.code);
-          saveOrders();
-          drawMy();
-          showAlert(`Код получен: ${data.code}`, "ok");
-          return;
-        }
-        showAlert((data && data.error) || "Код пока не пришёл, попробуй ещё раз.", "err");
-      } catch (e) {
-        showAlert("Ошибка запроса кода", "err");
-      }
-    }
-
-    async function doDeposit() {
-      clearAlert();
-      const amt = getAmount();
-      if (!amt || amt <= 0) {
-        showAlert("Укажи сумму больше нуля", "err");
+    async function submitDeposit() {
+      const raw = parseFloat(document.getElementById("depAmountInput").value || "0");
+      if (!Number.isFinite(raw) || raw <= 0) {
+        showToast("Введите корректную сумму");
         return;
       }
-      const btn = document.getElementById("depBtn");
-      btn.disabled = true;
+
       try {
         const res = await fetch(`${API_BASE}/api/deposit`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId, method, amount: amt, username })
+          body: JSON.stringify({
+            user_id: USER_ID,
+            method: state.depMethod,
+            amount: raw,
+          }),
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) {
-          showAlert((data && data.error) || "Ошибка пополнения", "err");
+        if (!data.ok) {
+          showToast(data.error || "Ошибка пополнения");
           return;
         }
-        if (method === "stars" && data.invoice_link && tg && tg.openInvoice) {
-          tg.openInvoice(data.invoice_link, async (status) => {
+        if (data.invoice_link && tg && tg.openInvoice) {
+          tg.openInvoice(data.invoice_link, (status) => {
             if (status === "paid") {
-              showAlert("Оплата звёздами прошла! Обновляем баланс...", "ok");
-              setTimeout(syncState, 1200);
-            } else {
-              showAlert("Оплата звёздами не завершена.", "err");
+              showToast("Оплата прошла!");
+              refreshState(false);
             }
           });
-          return;
+        } else if (data.sent_to_bot) {
+          showToast("Счёт отправлен в чат с ботом");
+        } else {
+          showToast("Заявка отправлена владельцу");
         }
-        if (method === "stars" && data.sent_to_bot) {
-          showAlert("Счёт на оплату звёздами отправлен в чат с ботом.", "ok");
-          return;
-        }
-        showAlert(`Заявка отправлена. Переведи ${amt} TON на кошелёк — баланс начислится после проверки.`, "ok");
-        await syncState();
       } catch (e) {
-        showAlert("Ошибка сети при пополнении", "err");
-      } finally {
-        btn.disabled = false;
+        showToast("Ошибка сети при пополнении");
       }
     }
 
-    document.getElementById("qInput").addEventListener("input", drawShop);
-    renderAll();
-    syncState();
+    async function requestCode(orderId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/code`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: USER_ID, order_id: orderId }),
+        });
+        const data = await res.json();
+        if (data.ok && data.code) {
+          showToast(`Код: ${data.code}`);
+          await refreshState(false);
+        } else {
+          showToast(data.error || "Запрос кода отправлен");
+        }
+      } catch (e) {
+        showToast("Не удалось запросить код");
+      }
+    }
+
+    async function refreshState(notify) {
+      const statusEl = document.getElementById("loaderStatus");
+      try {
+        if (statusEl) statusEl.textContent = "Синхронизация данных...";
+        const res = await fetch(`${API_BASE}/api/state?user_id=${USER_ID}`);
+        const data = await res.json();
+        if (data && data.ok) {
+          state.balance_rub = data.balance_rub;
+          state.rub_per_star = data.rub_per_star;
+          state.rub_per_ton = data.rub_per_ton;
+          state.crypto_wallet = data.crypto_wallet;
+          state.total_sold_count = data.total_sold_count;
+          state.items = data.items || [];
+          state.orders = data.orders || [];
+          renderAll();
+          if (notify) showToast("Данные обновлены");
+        }
+      } catch (e) {
+        if (notify) showToast("Не удалось обновить данные");
+      }
+    }
+
+    (async function boot() {
+      const statusEl = document.getElementById("loaderStatus");
+      if (statusEl) statusEl.textContent = "Загрузка каталога Dark Store...";
+      await refreshState(false);
+      setTimeout(() => {
+        const pre = document.getElementById("preloader");
+        if (pre) pre.classList.add("hidden");
+      }, 420);
+    })();
   </script>
 </body>
 </html>
