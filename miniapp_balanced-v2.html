@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Dark Store</title>
+  <title>DarkHub</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: #170609;
-      --surface: #25090e;
-      --surface-2: #320c14;
-      --surface-3: #3f1019;
+      --bg: #160609;
+      --surface: #24080e;
+      --surface-2: #310c14;
+      --surface-3: #3e1019;
       --border: rgba(255, 182, 193, 0.14);
-      --border-hi: rgba(255, 110, 132, 0.42);
+      --border-hi: rgba(255, 105, 128, 0.44);
       --ink: #fff6f7;
-      --muted: #cfa4ac;
-      --accent: #ff3355;
+      --muted: #cca1a9;
+      --crimson: #ff2e51;
       --rose: #f3d5da;
-      --rose-ink: #24070c;
+      --rose-ink: #22060b;
       --ok: #38e5a8;
+      --bad: #ff6b84;
       --r-xl: 22px;
       --r-lg: 18px;
       --r-md: 14px;
@@ -35,20 +36,20 @@
       padding: 0;
       min-height: 100%;
       background:
-        radial-gradient(circle at 50% -12%, rgba(255, 51, 85, 0.25), transparent 52%),
-        radial-gradient(circle at 85% 20%, rgba(165, 18, 44, 0.22), transparent 48%),
+        radial-gradient(circle at 50% -12%, rgba(255, 46, 81, 0.26), transparent 52%),
+        radial-gradient(circle at 88% 18%, rgba(155, 16, 40, 0.22), transparent 48%),
         var(--bg);
       color: var(--ink);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Inter, sans-serif;
       overflow-x: hidden;
     }
 
-    body.lite-motion * {
+    body.lite * {
       animation: none !important;
       transition: none !important;
     }
 
-    /* Прелоадер */
+    /* Крутой экран загрузки DarkHub */
     #preloader {
       position: fixed;
       inset: 0;
@@ -57,9 +58,13 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 14px;
-      background: radial-gradient(circle at 50% 35%, rgba(255, 51, 85, 0.22), transparent 55%), #120406;
-      transition: opacity 0.35s ease, visibility 0.35s ease;
+      gap: 16px;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 34%, rgba(255, 46, 81, 0.26), transparent 56%),
+        radial-gradient(circle at 20% 80%, rgba(140, 14, 36, 0.22), transparent 50%),
+        #110406;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
     }
 
     #preloader.hidden {
@@ -68,45 +73,103 @@
       pointer-events: none;
     }
 
-    .pre-box {
+    .pre-stage {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      display: grid;
+      place-items: center;
+    }
+
+    .pre-aura {
+      position: absolute;
+      inset: -10px;
+      border-radius: 32px;
+      background: radial-gradient(circle, rgba(255, 46, 81, 0.35), transparent 70%);
+      animation: pulseAura 1.8s ease-in-out infinite;
+    }
+
+    .pre-ring-outer {
+      position: absolute;
+      inset: -6px;
+      border-radius: 28px;
+      border: 2px solid transparent;
+      border-top-color: var(--crimson);
+      border-bottom-color: var(--rose);
+      animation: spinCw 1.15s linear infinite;
+    }
+
+    .pre-ring-inner {
+      position: absolute;
+      inset: 4px;
+      border-radius: 21px;
+      border: 1.5px dashed rgba(243, 213, 218, 0.45);
+      animation: spinCcw 1.9s linear infinite;
+    }
+
+    .pre-core {
       position: relative;
       width: 74px;
       height: 74px;
       border-radius: 22px;
-      background: linear-gradient(145deg, #560d1b, #23060b);
-      border: 1px solid rgba(255, 130, 148, 0.4);
+      background: linear-gradient(145deg, #5a0d1c, #21050a);
+      border: 1px solid rgba(255, 130, 148, 0.45);
       display: grid;
       place-items: center;
       font-weight: 900;
-      font-size: 21px;
+      font-size: 22px;
+      letter-spacing: 0.04em;
       color: var(--rose);
-      box-shadow: 0 0 32px rgba(255, 51, 85, 0.28);
+      box-shadow: 0 0 34px rgba(255, 46, 81, 0.35);
     }
 
-    .pre-ring {
-      position: absolute;
-      inset: -6px;
-      border-radius: 27px;
-      border: 2px solid transparent;
-      border-top-color: var(--accent);
-      border-right-color: var(--rose);
-      animation: spin 0.95s linear infinite;
-    }
-
-    @keyframes spin {
+    @keyframes spinCw {
       to { transform: rotate(360deg); }
     }
 
-    .pre-title {
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 0.14em;
+    @keyframes spinCcw {
+      to { transform: rotate(-360deg); }
+    }
+
+    @keyframes pulseAura {
+      0%, 100% { transform: scale(0.95); opacity: 0.65; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+
+    .pre-brand {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
     }
 
-    .pre-sub {
+    .pre-bar {
+      width: 220px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(243, 213, 218, 0.14);
+      overflow: hidden;
+    }
+
+    .pre-bar-fill {
+      height: 100%;
+      width: 20%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--crimson), var(--rose));
+      transition: width 0.25s ease;
+    }
+
+    .pre-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       font-size: 12px;
       color: var(--muted);
+    }
+
+    .pre-pct {
+      color: var(--rose);
+      font-weight: 800;
     }
 
     .wrap {
@@ -127,7 +190,7 @@
       padding: 10px 12px;
       margin-bottom: 14px;
       border-radius: var(--r-lg);
-      background: rgba(29, 7, 12, 0.88);
+      background: rgba(28, 7, 11, 0.88);
       backdrop-filter: blur(14px);
       border: 1px solid var(--border);
     }
@@ -142,12 +205,13 @@
       width: 34px;
       height: 34px;
       border-radius: 11px;
-      background: linear-gradient(145deg, #ffe4e9, #ff6d85);
+      background: linear-gradient(145deg, #ffe4e9, #ff6981);
       color: var(--rose-ink);
       font-weight: 900;
       font-size: 13px;
       display: grid;
       place-items: center;
+      flex-shrink: 0;
     }
 
     .brand-t {
@@ -167,7 +231,7 @@
       gap: 7px;
     }
 
-    .bal-badge {
+    .bal-chip {
       padding: 8px 11px;
       border-radius: var(--r-sm);
       background: var(--surface-2);
@@ -209,7 +273,7 @@
     .hero {
       padding: 16px;
       border-radius: var(--r-xl);
-      background: linear-gradient(140deg, rgba(255, 51, 85, 0.2), rgba(74, 10, 22, 0.6));
+      background: linear-gradient(140deg, rgba(255, 46, 81, 0.22), rgba(72, 9, 21, 0.65));
       border: 1px solid var(--border-hi);
       margin-bottom: 12px;
     }
@@ -413,6 +477,45 @@
       white-space: nowrap;
     }
 
+    .credit-box {
+      padding: 12px 14px;
+      border-radius: var(--r-md);
+      background: rgba(56, 229, 168, 0.11);
+      border: 1px solid rgba(56, 229, 168, 0.34);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .wallet-box {
+      padding: 12px;
+      border-radius: var(--r-md);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .wallet-addr {
+      font-size: 12px;
+      color: var(--rose);
+      word-break: break-all;
+      margin: 6px 0 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .err-box {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: var(--r-sm);
+      background: rgba(255, 107, 132, 0.14);
+      border: 1px solid rgba(255, 107, 132, 0.4);
+      color: var(--bad);
+      font-size: 12px;
+      font-weight: 600;
+      display: none;
+    }
+
     .code-alert {
       margin-top: 10px;
       padding: 10px 12px;
@@ -422,6 +525,21 @@
       color: var(--ok);
       font-weight: 700;
       font-size: 13px;
+    }
+
+    .status-pill {
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--rose);
+    }
+
+    .status-pill.done {
+      color: var(--ok);
+      border-color: rgba(56, 229, 168, 0.35);
     }
 
     .empty-card {
@@ -434,7 +552,6 @@
       font-size: 13px;
     }
 
-    /* Тумблер */
     .switch {
       width: 44px;
       height: 24px;
@@ -459,7 +576,7 @@
     }
 
     .switch.on {
-      background: rgba(255, 51, 85, 0.35);
+      background: rgba(255, 46, 81, 0.35);
       border-color: var(--rose);
     }
 
@@ -468,7 +585,6 @@
       background: var(--rose);
     }
 
-    /* Нижнее меню */
     .dock {
       position: fixed;
       left: 0;
@@ -550,26 +666,35 @@
   </style>
 </head>
 <body>
+  <!-- Экран загрузки -->
   <div id="preloader">
-    <div class="pre-box">
-      <div class="pre-ring"></div>
-      DS
+    <div class="pre-stage">
+      <div class="pre-aura"></div>
+      <div class="pre-ring-outer"></div>
+      <div class="pre-ring-inner"></div>
+      <div class="pre-core">DH</div>
     </div>
-    <div class="pre-title">Dark Store</div>
-    <div class="pre-sub" id="preStatus">Синхронизация с сервером...</div>
+    <div class="pre-brand">DarkHub</div>
+    <div class="pre-bar">
+      <div class="pre-bar-fill" id="preFill"></div>
+    </div>
+    <div class="pre-meta">
+      <span id="preStatus">Запуск ядра...</span>
+      <span class="pre-pct" id="prePct">15%</span>
+    </div>
   </div>
 
   <div class="wrap">
     <header class="header">
       <div class="brand-left">
-        <div class="brand-ava">DS</div>
+        <div class="brand-ava">DH</div>
         <div>
-          <div class="brand-t">Dark Store</div>
+          <div class="brand-t">DarkHub</div>
           <div class="brand-s" id="hdrStatus">Онлайн • Продано: 0</div>
         </div>
       </div>
       <div class="header-right">
-        <div class="bal-badge" id="hdrBal" onclick="goPage('deposit')">0.00 ₽</div>
+        <div class="bal-chip" id="hdrBal" onclick="goPage('deposit')">0.00 ₽</div>
         <button class="round-btn" onclick="syncState(true)" title="Обновить">↻</button>
         <button class="round-btn" onclick="goPage('help')" title="Помощь">💬</button>
       </div>
@@ -578,8 +703,8 @@
     <!-- МАГАЗИН -->
     <section id="page-shop" class="page active">
       <div class="hero">
-        <h1>Каталог Dark Store</h1>
-        <p>Быстрая покупка из наличия и выдача кодов входа прямо в разделе заказов.</p>
+        <h1>DarkHub Маркет</h1>
+        <p>Актуальные позиции из наличия, быстрая выдача и получение кодов входа в приложении.</p>
       </div>
 
       <div class="grid-2" style="grid-template-columns: 1fr auto; margin-bottom: 8px;">
@@ -592,9 +717,9 @@
       </div>
 
       <div class="row" style="gap:6px; margin-bottom:10px; justify-content:flex-start; flex-wrap:wrap;">
-        <button id="fAll" class="chip-tag active" onclick="setShopFilter('all', this)">Все позиции</button>
-        <button id="fBudget" class="chip-tag" onclick="setShopFilter('budget', this)">До 200 ₽</button>
-        <button id="fMany" class="chip-tag" onclick="setShopFilter('many', this)">Много в наличии</button>
+        <button class="chip-tag active" onclick="setShopFilter('all', this)">Все позиции</button>
+        <button class="chip-tag" onclick="setShopFilter('budget', this)">До 200 ₽</button>
+        <button class="chip-tag" onclick="setShopFilter('many', this)">Много в наличии</button>
       </div>
 
       <div class="row" style="font-size:12px; color:var(--muted); margin-bottom:10px; padding:0 2px;">
@@ -609,12 +734,16 @@
     <section id="page-orders" class="page">
       <div class="hero">
         <h1>Мои заказы</h1>
-        <p>Нажмите «Получить код», чтобы подтянуть свежий код входа по покупке.</p>
+        <p>Активные заказы без выданного кода и завершённые — с полученным кодом входа.</p>
       </div>
 
       <div class="grid-2" style="margin-bottom:12px;">
-        <button id="ordTabAll" class="pill-choice active" onclick="setOrderMode('all')">Все заказы</button>
-        <button id="ordTabCoded" class="pill-choice" onclick="setOrderMode('coded')">С кодом</button>
+        <button id="ordTabActive" class="pill-choice active" onclick="setOrderMode('active')">
+          Активные • <span id="cntActive">0</span>
+        </button>
+        <button id="ordTabDone" class="pill-choice" onclick="setOrderMode('done')">
+          Завершённые • <span id="cntDone">0</span>
+        </button>
       </div>
 
       <div id="ordersList"></div>
@@ -643,8 +772,15 @@
 
         <input id="amtInput" class="input" type="number" min="0.1" step="any" value="10" oninput="refreshPayCalc()" style="margin-bottom:10px;" />
 
-        <div id="tonHint" style="display:none; font-size:12px; color:var(--muted); margin-bottom:10px; word-break:break-all;">
-          Кошелёк TON: <strong id="tonWalletVal" style="color:var(--ink);">—</strong>
+        <div class="credit-box">
+          <span style="font-size:13px; color:var(--muted);">Зачислим на баланс</span>
+          <strong style="font-size:16px; color:var(--ok);" id="creditPreview">+16.00 ₽</strong>
+        </div>
+
+        <div id="tonBox" class="wallet-box" style="display:none;">
+          <div style="font-size:12px; color:var(--muted);">Кошелёк TON для перевода:</div>
+          <div class="wallet-addr" id="tonWalletVal">UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux</div>
+          <button class="btn-dark" style="width:100%;" onclick="copyWallet()">Копировать адрес кошелька</button>
         </div>
 
         <div id="calcLine" style="font-size:12px; color:var(--muted); margin-bottom:12px;">
@@ -654,9 +790,11 @@
         <button id="paySubmit" class="btn-rose" style="width:100%;" onclick="runDeposit()">
           ОПЛАТИТЬ 10 ⭐ (+16.00 ₽)
         </button>
+
+        <div id="depErrBox" class="err-box"></div>
       </div>
 
-      <div class="group-label">Последние заявки / действия</div>
+      <div class="group-label">История действий пополнения</div>
       <div id="depHistoryBox"></div>
     </section>
 
@@ -664,7 +802,7 @@
     <section id="page-profile" class="page">
       <div class="card">
         <div class="row" style="justify-content:flex-start; gap:12px; margin-bottom:12px;">
-          <div class="brand-ava" id="profAva" style="width:52px; height:52px; border-radius:50%; font-size:18px;">DS</div>
+          <div class="brand-ava" id="profAva" style="width:52px; height:52px; border-radius:50%; font-size:18px;">DH</div>
           <div>
             <div style="font-size:18px; font-weight:800;" id="profName">Покупатель</div>
             <div class="row" style="justify-content:flex-start; gap:6px; margin-top:4px; flex-wrap:wrap;">
@@ -705,8 +843,8 @@
         <div class="row" style="justify-content:flex-start;">
           <div class="tile-ico">📦</div>
           <div>
-            <div class="tile-title">История покупок</div>
-            <div class="tile-sub">Выданные позиции и коды входа</div>
+            <div class="tile-title">Мои покупки</div>
+            <div class="tile-sub">Активные и завершённые заказы с кодами</div>
           </div>
         </div>
         <span>›</span>
@@ -717,18 +855,18 @@
           <div class="tile-ico">⭐</div>
           <div>
             <div class="tile-title">Отзывы</div>
-            <div class="tile-sub">Канал с отзывами покупателей</div>
+            <div class="tile-sub">Канал отзывов DarkHub</div>
           </div>
         </div>
         <span>↗</span>
       </button>
 
-      <div class="group-label">Уведомления и режим</div>
+      <div class="group-label">Настройки</div>
       <div class="card">
         <div class="row" style="margin-bottom:12px;">
           <div>
-            <div class="tile-title">Оповещать о новых позициях</div>
-            <div class="tile-sub">Локальный переключатель в мини-аппе</div>
+            <div class="tile-title">Оповещать о новинках</div>
+            <div class="tile-sub">Локальный переключатель уведомлений</div>
           </div>
           <div id="swNotify" class="switch on" onclick="togglePref('notify', this)"></div>
         </div>
@@ -741,11 +879,11 @@
         </div>
       </div>
 
-      <div class="group-label">Диагностика подключения</div>
-      <div class="card" style="font-size:12px; color:var(--muted); line-height:1.5;">
-        <div>Активный USER_ID: <strong id="diagUid" style="color:var(--ink);">—</strong></div>
-        <div>Сервер API: <strong id="diagApi" style="color:var(--ink); word-break:break-all;">—</strong></div>
-        <div>Статус ответа: <strong id="diagStatus" style="color:var(--ok);">—</strong></div>
+      <div class="group-label">Диагностика API и баланса</div>
+      <div class="card" style="font-size:12px; color:var(--muted); line-height:1.55;">
+        <div>USER_ID: <strong id="diagUid" style="color:var(--ink);">—</strong></div>
+        <div>API_BASE: <strong id="diagApi" style="color:var(--ink); word-break:break-all;">—</strong></div>
+        <div>Ответ сервера: <strong id="diagStatus" style="color:var(--ok);">—</strong></div>
         <div style="margin-top:10px;">
           <button class="btn-dark" onclick="syncState(true)">Проверить связь и баланс</button>
         </div>
@@ -755,21 +893,21 @@
     <!-- ПОМОЩЬ -->
     <section id="page-help" class="page">
       <div class="hero">
-        <h1>Помощь</h1>
-        <p>Выберите тему обращения или напишите напрямую в поддержку <strong>@gerulev</strong>.</p>
+        <h1>Помощь DarkHub</h1>
+        <p>Выберите ситуацию или напишите напрямую в поддержку <strong>@gerulev</strong>.</p>
       </div>
 
-      <div class="group-label" style="margin-top:0;">Быстрая тема</div>
+      <div class="group-label" style="margin-top:0;">Что случилось</div>
       <div class="grid-2" style="margin-bottom:10px;">
-        <button class="chip-tag" onclick="pickTopic('Не приходит код входа', this)">🔑 Не приходит код</button>
-        <button class="chip-tag" onclick="pickTopic('Вопрос по оплате / балансу', this)">💳 Оплата и баланс</button>
-        <button class="chip-tag" onclick="pickTopic('Проблема с аккаунтом / 2FA', this)">🔐 Аккаунт и 2FA</button>
-        <button class="chip-tag" onclick="pickTopic('Другой вопрос', this)">💬 Другой вопрос</button>
+        <button class="chip-tag" onclick="pickTopic('Не приходит код', this)">🔑 Не приходит код</button>
+        <button class="chip-tag" onclick="pickTopic('Слетела сессия', this)">📲 Слетела сессия</button>
+        <button class="chip-tag" onclick="pickTopic('Не подходит пароль 2FA', this)">🔐 Пароль 2FA</button>
+        <button class="chip-tag" onclick="pickTopic('Вопрос по оплате', this)">💳 Вопрос по оплате</button>
       </div>
 
       <div class="card">
         <div style="font-size:13px; font-weight:700; margin-bottom:8px;" id="helpTopicLabel">Тема: Общий вопрос</div>
-        <textarea id="helpText" class="textarea" placeholder="Опишите ситуацию или укажите номер заказа..."></textarea>
+        <textarea id="helpText" class="textarea" placeholder="Опишите проблему или укажите номер заказа..."></textarea>
         <div class="grid-2" style="margin-top:10px;">
           <button class="btn-dark" onclick="copyHelpText()">Скопировать текст</button>
           <button class="btn-rose" onclick="openSupport()">Написать @gerulev ↗</button>
@@ -778,7 +916,7 @@
     </section>
 
     <footer class="footer">
-      <span>Dark Store • 2026</span>
+      <span>DarkHub • 2026</span>
       <a href="#" onclick="toast('Политика конфиденциальности'); return false;">Политика конфиденциальности</a>
       <a href="#" onclick="toast('Пользовательское соглашение'); return false;">Соглашение</a>
     </footer>
@@ -823,32 +961,42 @@
     const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
     const USER_ID = tgUser && tgUser.id ? Number(tgUser.id) : 622034883;
     const REVIEWS_URL = "https://t.me/+7N5DvqV20UM3Nzll";
+    const DEFAULT_TON_WALLET = "UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux";
 
     const state = {
       balance_rub: 0,
       rub_per_star: 1.6,
       rub_per_ton: 115,
-      crypto_wallet: "",
+      crypto_wallet: DEFAULT_TON_WALLET,
       total_sold_count: 0,
       items: [],
       orders: [],
       payMethod: "stars",
       shopFilter: "all",
-      orderMode: "all",
+      orderMode: "active",
       helpTopic: "Общий вопрос",
       depLogs: [],
       prefs: { notify: true, lite: false },
     };
 
     try {
-      const savedPrefs = JSON.parse(localStorage.getItem("ds_prefs") || "{}");
+      const savedPrefs = JSON.parse(localStorage.getItem("dh_prefs") || "{}");
       if (typeof savedPrefs.notify === "boolean") state.prefs.notify = savedPrefs.notify;
       if (typeof savedPrefs.lite === "boolean") state.prefs.lite = savedPrefs.lite;
-      const savedLogs = JSON.parse(localStorage.getItem("ds_dep_logs") || "[]");
+      const savedLogs = JSON.parse(localStorage.getItem("dh_dep_logs") || "[]");
       if (Array.isArray(savedLogs)) state.depLogs = savedLogs.slice(0, 8);
     } catch {}
 
-    if (state.prefs.lite) document.body.classList.add("lite-motion");
+    if (state.prefs.lite) document.body.classList.add("lite");
+
+    function setLoaderProgress(pct, text) {
+      const fill = document.getElementById("preFill");
+      const pEl = document.getElementById("prePct");
+      const sEl = document.getElementById("preStatus");
+      if (fill) fill.style.width = `${Math.max(5, Math.min(100, pct))}%`;
+      if (pEl) pEl.textContent = `${Math.round(pct)}%`;
+      if (sEl && text) sEl.textContent = text;
+    }
 
     function toast(msg) {
       const el = document.getElementById("toast");
@@ -856,6 +1004,18 @@
       el.classList.add("show");
       clearTimeout(window.__toastTimer);
       window.__toastTimer = setTimeout(() => el.classList.remove("show"), 2300);
+    }
+
+    function showDepError(msg) {
+      const box = document.getElementById("depErrBox");
+      if (!box) return;
+      if (!msg) {
+        box.style.display = "none";
+        box.textContent = "";
+      } else {
+        box.style.display = "block";
+        box.textContent = msg;
+      }
     }
 
     function goPage(p) {
@@ -886,13 +1046,14 @@
 
     function saveLocal() {
       try {
-        localStorage.setItem("ds_prefs", JSON.stringify(state.prefs));
-        localStorage.setItem("ds_dep_logs", JSON.stringify(state.depLogs.slice(0, 8)));
+        localStorage.setItem("dh_prefs", JSON.stringify(state.prefs));
+        localStorage.setItem("dh_dep_logs", JSON.stringify(state.depLogs.slice(0, 8)));
       } catch {}
     }
 
     function renderAll() {
-      const balStr = `${Number(appBalance()).toFixed(2)} ₽`;
+      const bal = Number(state.balance_rub || 0);
+      const balStr = `${bal.toFixed(2)} ₽`;
       document.getElementById("hdrBal").textContent = balStr;
       document.getElementById("depCurrentBal").textContent = balStr;
       document.getElementById("profBal").textContent = balStr;
@@ -909,17 +1070,21 @@
       document.getElementById("profHandle").textContent = handle;
       document.getElementById("profIdChip").textContent = `ID: ${USER_ID}`;
 
+      const orders = state.orders || [];
+      const activeCnt = orders.filter((o) => !o.code).length;
+      const doneCnt = orders.filter((o) => !!o.code).length;
+      document.getElementById("cntActive").textContent = String(activeCnt);
+      document.getElementById("cntDone").textContent = String(doneCnt);
+
       const totalStock = (state.items || []).reduce((acc, x) => acc + Number(x.count || 0), 0);
-      document.getElementById("stOrders").textContent = (state.orders || []).length;
-      document.getElementById("stSold").textContent = state.total_sold_count || 0;
-      document.getElementById("stItems").textContent = totalStock;
+      document.getElementById("stOrders").textContent = String(orders.length);
+      document.getElementById("stSold").textContent = String(state.total_sold_count || 0);
+      document.getElementById("stItems").textContent = String(totalStock);
 
       document.getElementById("diagUid").textContent = String(USER_ID);
       document.getElementById("diagApi").textContent = API_BASE;
 
-      if (state.crypto_wallet) {
-        document.getElementById("tonWalletVal").textContent = state.crypto_wallet;
-      }
+      document.getElementById("tonWalletVal").textContent = state.crypto_wallet || DEFAULT_TON_WALLET;
 
       document.getElementById("swNotify").classList.toggle("on", !!state.prefs.notify);
       document.getElementById("swLite").classList.toggle("on", !!state.prefs.lite);
@@ -928,10 +1093,6 @@
       renderOrders();
       renderDepLogs();
       refreshPayCalc();
-    }
-
-    function appBalance() {
-      return Number(state.balance_rub || 0);
     }
 
     function setShopFilter(f, btn) {
@@ -984,47 +1145,61 @@
 
     function setOrderMode(mode) {
       state.orderMode = mode;
-      document.getElementById("ordTabAll").classList.toggle("active", mode === "all");
-      document.getElementById("ordTabCoded").classList.toggle("active", mode === "coded");
+      document.getElementById("ordTabActive").classList.toggle("active", mode === "active");
+      document.getElementById("ordTabDone").classList.toggle("active", mode === "done");
       renderOrders();
     }
 
     function renderOrders() {
       const raw = [...(state.orders || [])].reverse();
-      const list = state.orderMode === "coded" ? raw.filter((o) => !!o.code) : raw;
+      const list = state.orderMode === "done"
+        ? raw.filter((o) => !!o.code)
+        : raw.filter((o) => !o.code);
       const box = document.getElementById("ordersList");
 
       if (!list.length) {
-        box.innerHTML = `<div class="empty-card">Заказов в этом списке пока нет.</div>`;
+        box.innerHTML = `<div class="empty-card">${
+          state.orderMode === "done"
+            ? "Завершённых заказов с кодом пока нет."
+            : "Активных заказов пока нет."
+        }</div>`;
         return;
       }
 
-      box.innerHTML = list.map((o) => `
-        <div class="card">
-          <div class="row" style="align-items:flex-start; margin-bottom:6px;">
-            <div>
-              <div style="font-size:16px; font-weight:800;">${esc(o.phone || "—")}</div>
-              <div style="font-size:12px; color:var(--muted);">${esc(o.title || "Позиция")} • ${esc(o.order_id || "")}</div>
+      box.innerHTML = list.map((o) => {
+        const isDone = !!o.code;
+        return `
+          <div class="card">
+            <div class="row" style="align-items:flex-start; margin-bottom:6px;">
+              <div>
+                <div style="font-size:16px; font-weight:800;">${esc(o.phone || "—")}</div>
+                <div style="font-size:12px; color:var(--muted);">${esc(o.title || "Позиция")} • ${esc(o.order_id || "")}</div>
+              </div>
+              <span class="status-pill ${isDone ? "done" : ""}">${isDone ? "Завершён" : "Активен"}</span>
             </div>
-            <button class="btn-dark" onclick="copyText('${esc(o.phone || "")}')">Копировать</button>
+            <div class="row" style="margin-top:10px; justify-content:flex-start; gap:8px;">
+              <button class="btn-rose" onclick="reqCode('${esc(o.order_id || "")}')">Получить код</button>
+              <button class="btn-dark" onclick="copyText('${esc(o.phone || "")}')">Копировать номер</button>
+            </div>
+            ${isDone ? `<div class="code-alert">Код входа: ${esc(o.code)}</div>` : ""}
           </div>
-          <button class="btn-rose" onclick="reqCode('${esc(o.order_id || "")}')">Получить код</button>
-          ${o.code ? `<div class="code-alert">Код входа: ${esc(o.code)}</div>` : ""}
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     function choosePay(m) {
+      showDepError("");
       state.payMethod = m;
       document.getElementById("payStars").classList.toggle("active", m === "stars");
       document.getElementById("payTon").classList.toggle("active", m === "ton");
       document.getElementById("presetsWrap").style.display = m === "stars" ? "grid" : "none";
-      document.getElementById("tonHint").style.display = m === "ton" ? "block" : "none";
+      document.getElementById("tonBox").style.display = m === "ton" ? "block" : "none";
       document.getElementById("amtInput").value = m === "stars" ? "10" : "1";
       refreshPayCalc();
     }
 
     function setAmt(val, btn) {
+      showDepError("");
       document.querySelectorAll("#presetsWrap .pill-choice").forEach((b) => b.classList.remove("active"));
       btn?.classList.add("active");
       document.getElementById("amtInput").value = String(val);
@@ -1036,22 +1211,33 @@
       const amt = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
       const btn = document.getElementById("paySubmit");
       const line = document.getElementById("calcLine");
+      const prev = document.getElementById("creditPreview");
 
       if (state.payMethod === "stars") {
         const stars = Math.max(1, Math.round(amt || 10));
         const rub = (stars * Number(state.rub_per_star || 1.6)).toFixed(2);
         line.textContent = `Курс: 1 ⭐ = ${state.rub_per_star} ₽`;
+        prev.textContent = `+${rub} ₽`;
         btn.textContent = `ОПЛАТИТЬ ${stars} ⭐ (+${rub} ₽)`;
       } else {
         const ton = amt > 0 ? amt : 1;
         const rub = (ton * Number(state.rub_per_ton || 115)).toFixed(2);
         line.textContent = `Курс: 1 TON = ${state.rub_per_ton} ₽`;
+        prev.textContent = `~${rub} ₽`;
         btn.textContent = `ОТПРАВИТЬ ЗАЯВКУ ${ton} TON (~${rub} ₽)`;
       }
     }
 
+    function copyWallet() {
+      const addr = document.getElementById("tonWalletVal").textContent.trim();
+      copyText(addr);
+    }
+
     function addDepLog(text) {
-      state.depLogs.unshift({ text, time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) });
+      state.depLogs.unshift({
+        text,
+        time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+      });
       state.depLogs = state.depLogs.slice(0, 6);
       saveLocal();
       renderDepLogs();
@@ -1076,7 +1262,7 @@
     function togglePref(key, el) {
       state.prefs[key] = !state.prefs[key];
       el.classList.toggle("on", state.prefs[key]);
-      if (key === "lite") document.body.classList.toggle("lite-motion", state.prefs[key]);
+      if (key === "lite") document.body.classList.toggle("lite", state.prefs[key]);
       saveLocal();
       toast("Сохранено");
     }
@@ -1095,7 +1281,7 @@
 
     function copyHelpText() {
       const body = (document.getElementById("helpText").value || "").trim();
-      const out = `[Dark Store | ID ${USER_ID}] ${state.helpTopic}${body ? ": " + body : ""}`;
+      const out = `[DarkHub | ID ${USER_ID}] ${state.helpTopic}${body ? ": " + body : ""}`;
       copyText(out);
     }
 
@@ -1120,9 +1306,11 @@
     }
 
     async function runDeposit() {
+      showDepError("");
       const parsed = parseFloat(document.getElementById("amtInput").value || "0");
       if (!Number.isFinite(parsed) || parsed <= 0) {
-        toast("Введите сумму больше 0");
+        showDepError("Введите сумму больше 0.");
+        toast("Введите сумму");
         return;
       }
 
@@ -1132,30 +1320,43 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user_id: USER_ID, method: state.payMethod, amount: parsed }),
         });
-        const data = await res.json();
-        if (!data.ok) {
-          addDepLog(`Ошибка (${state.payMethod}): ${data.error || "отказ"}`);
-          toast(data.error || "Ошибка пополнения");
+
+        let data = {};
+        try {
+          data = await res.json();
+        } catch {
+          data = { ok: false, error: `HTTP ${res.status}` };
+        }
+
+        if (!res.ok || !data.ok) {
+          const errMsg = data.error || `Ошибка сервера (${res.status})`;
+          showDepError(errMsg);
+          addDepLog(`Ошибка (${state.payMethod}): ${errMsg}`);
+          toast(errMsg);
           return;
         }
 
         if (data.invoice_link && tg && tg.openInvoice) {
-          addDepLog(`Счёт на ${parsed} ⭐ выставлен`);
+          addDepLog(`Счёт на ${parsed} ⭐ открыт`);
           tg.openInvoice(data.invoice_link, (status) => {
             if (status === "paid") {
               addDepLog(`Оплачено ${parsed} ⭐`);
               toast("Баланс пополнен!");
               syncState(false);
+            } else if (status === "failed") {
+              showDepError("Оплата звёздами не прошла.");
             }
           });
         } else if (data.sent_to_bot) {
-          addDepLog(`Счёт на ${parsed} ⭐ отправлен в бот`);
+          addDepLog(`Счёт на ${parsed} ⭐ отправлен в чат с ботом`);
           toast("Счёт отправлен в чат с ботом");
         } else {
-          addDepLog(`Заявка на ${parsed} TON отправлена`);
+          addDepLog(`Заявка на ${parsed} TON отправлена владельцу`);
           toast("Заявка отправлена владельцу");
         }
-      } catch {
+      } catch (e) {
+        const msg = "Нет связи с /api/deposit (проверьте API_BASE или запуск сервера)";
+        showDepError(msg);
         addDepLog("Ошибка сети при пополнении");
         toast("Ошибка сети");
       }
@@ -1181,50 +1382,60 @@
     }
 
     async function syncState(notify) {
-      const preSt = document.getElementById("preStatus");
       const apiTag = document.getElementById("apiStateTag");
       const diagSt = document.getElementById("diagStatus");
+      setLoaderProgress(60, "Синхронизация баланса и каталога...");
 
       try {
-        if (preSt) preSt.textContent = "Загрузка данных...";
         const res = await fetch(`${API_BASE}/api/state?user_id=${USER_ID}`);
         const data = await res.json();
         if (data && data.ok) {
           Object.assign(state, data);
+          if (!state.crypto_wallet) state.crypto_wallet = DEFAULT_TON_WALLET;
           renderAll();
           if (apiTag) {
             apiTag.textContent = "API: OK";
             apiTag.style.color = "var(--ok)";
           }
           if (diagSt) {
-            diagSt.textContent = "200 OK (данные получены)";
+            diagSt.textContent = `200 OK • Баланс: ${Number(data.balance_rub || 0).toFixed(2)} ₽`;
             diagSt.style.color = "var(--ok)";
           }
-          if (notify) toast("Синхронизировано");
+          setLoaderProgress(100, "Готово");
+          if (notify) toast("Обновлено");
         } else {
-          if (apiTag) apiTag.textContent = "API: ошибка";
-          if (diagSt) diagSt.textContent = data?.error || "Ошибка ответа";
+          if (apiTag) {
+            apiTag.textContent = "API: ошибка";
+            apiTag.style.color = "var(--bad)";
+          }
+          if (diagSt) {
+            diagSt.textContent = data?.error || "Ошибка ответа";
+            diagSt.style.color = "var(--bad)";
+          }
+          setLoaderProgress(100, "Ошибка ответа API");
           if (notify) toast(data?.error || "Ошибка сервера");
         }
       } catch {
         if (apiTag) {
-          apiTag.textContent = "API: недоступен";
-          apiTag.style.color = "#ff7b90";
+          apiTag.textContent = "API: оффлайн";
+          apiTag.style.color = "var(--bad)";
         }
         if (diagSt) {
-          diagSt.textContent = "Сеть / CORS / сервер спит";
-          diagSt.style.color = "#ff7b90";
+          diagSt.textContent = "Нет ответа от сервера / CORS";
+          diagSt.style.color = "var(--bad)";
         }
         renderAll();
+        setLoaderProgress(100, "Автономный режим");
         if (notify) toast("Нет связи с API");
       }
     }
 
     (async function boot() {
+      setLoaderProgress(25, "Подключение к DarkHub...");
       await syncState(false);
       setTimeout(() => {
         document.getElementById("preloader")?.classList.add("hidden");
-      }, 360);
+      }, 380);
     })();
   </script>
 </body>
