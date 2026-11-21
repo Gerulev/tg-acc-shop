@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>DARK STORE — Mini App</title>
+  <title>Dark Store</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: #07080d;
-      --surface: #0e1018;
-      --surface-2: #151926;
-      --border: rgba(255, 255, 255, 0.08);
-      --border-strong: rgba(0, 240, 255, 0.35);
-      --text: #f4f6fb;
-      --muted: #8a93a8;
-      --accent: #00e5ff;
-      --accent-2: #7b61ff;
-      --ok: #18e09c;
-      --warn: #ffb84d;
-      --danger: #ff4d6d;
-      --radius-lg: 20px;
-      --radius-md: 14px;
-      --radius-sm: 10px;
+      --bg: #160709;
+      --surface: #220b0f;
+      --surface-2: #2e1016;
+      --border: rgba(255, 180, 190, 0.14);
+      --border-strong: rgba(255, 92, 118, 0.45);
+      --text: #fff7f8;
+      --muted: #c79ea5;
+      --crimson: #ff3b5c;
+      --crimson-deep: #8f162c;
+      --light-pill: #f5d8dd;
+      --light-ink: #22080c;
+      --ok: #38e5a8;
+      --r-lg: 20px;
+      --r-md: 14px;
+      --r-sm: 10px;
     }
 
     * {
@@ -34,15 +34,15 @@
       padding: 0;
       min-height: 100%;
       background:
-        radial-gradient(circle at 12% -5%, rgba(0, 229, 255, 0.16), transparent 42%),
-        radial-gradient(circle at 92% 8%, rgba(123, 97, 255, 0.16), transparent 45%),
+        radial-gradient(circle at 50% -10%, rgba(255, 59, 92, 0.24), transparent 52%),
+        radial-gradient(circle at 88% 15%, rgba(180, 24, 52, 0.2), transparent 45%),
         var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Inter, sans-serif;
       overflow-x: hidden;
     }
 
-    /* Свежий экран загрузки */
+    /* Прелоадер в красно-светлых тонах */
     #preloader {
       position: fixed;
       inset: 0;
@@ -51,11 +51,11 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 18px;
+      gap: 16px;
       background:
-        radial-gradient(circle at 50% 35%, rgba(0, 229, 255, 0.14), transparent 55%),
-        #06070b;
-      transition: opacity 0.45s ease, visibility 0.45s ease;
+        radial-gradient(circle at 50% 35%, rgba(255, 59, 92, 0.22), transparent 55%),
+        #120507;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
     }
 
     #preloader.hidden {
@@ -64,91 +64,77 @@
       pointer-events: none;
     }
 
-    .loader-core {
+    .loader-emblem {
       position: relative;
-      width: 84px;
-      height: 84px;
-      border-radius: 24px;
-      background: linear-gradient(145deg, #121624, #0a0c14);
-      border: 1px solid rgba(0, 229, 255, 0.35);
-      box-shadow: 0 0 36px rgba(0, 229, 255, 0.22), inset 0 0 18px rgba(123, 97, 255, 0.18);
+      width: 78px;
+      height: 78px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, #4b0d19, #22070c);
+      border: 1px solid rgba(255, 130, 148, 0.4);
+      box-shadow: 0 0 34px rgba(255, 59, 92, 0.3);
       display: grid;
       place-items: center;
-      animation: floatPulse 2.2s ease-in-out infinite;
+      font-weight: 900;
+      font-size: 22px;
+      color: var(--light-pill);
     }
 
     .loader-ring {
       position: absolute;
-      inset: -7px;
-      border-radius: 29px;
+      inset: -6px;
+      border-radius: 27px;
       border: 2px solid transparent;
-      border-top-color: var(--accent);
-      border-right-color: var(--accent-2);
-      animation: spinRing 1.1s linear infinite;
+      border-top-color: var(--crimson);
+      border-right-color: var(--light-pill);
+      animation: spin 1s linear infinite;
     }
 
-    .loader-brand {
-      font-weight: 900;
-      font-size: 22px;
-      letter-spacing: 0.08em;
-      background: linear-gradient(135deg, #ffffff 15%, var(--accent) 85%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .loader-title {
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text);
-    }
-
-    .loader-sub {
-      font-size: 12px;
-      color: var(--muted);
-      min-height: 16px;
-    }
-
-    .loader-bar {
-      width: 210px;
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      overflow: hidden;
-    }
-
-    .loader-bar > span {
-      display: block;
-      height: 100%;
-      width: 35%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2));
-      animation: barSlide 1.35s ease-in-out infinite;
-    }
-
-    @keyframes spinRing {
+    @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    @keyframes floatPulse {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
+    .loader-name {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
     }
 
-    @keyframes barSlide {
-      0% { transform: translateX(-80%); width: 45%; }
-      50% { transform: translateX(110%); width: 65%; }
-      100% { transform: translateX(260%); width: 45%; }
+    .loader-status {
+      font-size: 12px;
+      color: var(--muted);
     }
 
-    /* Основной контейнер */
+    .loader-track {
+      width: 190px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 216, 221, 0.14);
+      overflow: hidden;
+    }
+
+    .loader-track > span {
+      display: block;
+      height: 100%;
+      width: 40%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--crimson), var(--light-pill));
+      animation: slideBar 1.25s ease-in-out infinite;
+    }
+
+    @keyframes slideBar {
+      0% { transform: translateX(-80%); }
+      50% { transform: translateX(130%); }
+      100% { transform: translateX(280%); }
+    }
+
     .app {
       max-width: 560px;
       margin: 0 auto;
-      padding: 14px 14px 92px;
+      padding: 12px 14px 96px;
     }
 
+    /* Шапка */
     .topbar {
       position: sticky;
       top: 0;
@@ -157,122 +143,120 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       margin-bottom: 14px;
-      border-radius: var(--radius-lg);
-      background: rgba(12, 15, 24, 0.82);
-      backdrop-filter: blur(16px);
+      border-radius: var(--r-lg);
+      background: rgba(28, 8, 12, 0.86);
+      backdrop-filter: blur(14px);
       border: 1px solid var(--border);
     }
 
-    .brand-box {
+    .brand {
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
-    .brand-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
       display: grid;
       place-items: center;
       font-weight: 900;
       font-size: 13px;
-      color: #05070c;
-      background: linear-gradient(135deg, var(--accent), #7df9ff);
-      box-shadow: 0 0 18px rgba(0, 229, 255, 0.35);
+      color: var(--light-ink);
+      background: linear-gradient(145deg, #ffe3e8, #ff7b90);
+      box-shadow: 0 0 16px rgba(255, 59, 92, 0.35);
     }
 
-    .brand-name {
-      font-size: 15px;
+    .brand-title {
+      font-size: 16px;
       font-weight: 800;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
     }
 
-    .brand-tag {
+    .brand-sub {
       font-size: 11px;
-      color: var(--ok);
+      color: var(--muted);
     }
 
-    .top-actions {
+    .top-right {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .pill-bal {
+    .bal-chip {
       padding: 8px 12px;
-      border-radius: 999px;
+      border-radius: var(--r-sm);
       background: var(--surface-2);
       border: 1px solid var(--border-strong);
       font-size: 13px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--light-pill);
       white-space: nowrap;
     }
 
-    .btn-ghost {
-      padding: 8px 11px;
-      border-radius: 999px;
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
       background: var(--surface-2);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 14px;
+      display: grid;
+      place-items: center;
       cursor: pointer;
-    }
-
-    .btn-ghost:active {
-      transform: scale(0.97);
     }
 
     .section {
       display: none;
-      animation: fadeUp 0.24s ease;
+      animation: fadeIn 0.2s ease;
     }
 
     .section.active {
       display: block;
     }
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(6px); }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .hero-card {
-      padding: 16px;
-      border-radius: var(--radius-lg);
-      background: linear-gradient(135deg, rgba(0, 229, 255, 0.11), rgba(123, 97, 255, 0.11));
-      border: 1px solid rgba(0, 229, 255, 0.22);
-      margin-bottom: 14px;
+    .banner {
+      padding: 15px 16px;
+      border-radius: var(--r-lg);
+      background: linear-gradient(135deg, rgba(255, 59, 92, 0.2), rgba(76, 12, 24, 0.55));
+      border: 1px solid var(--border-strong);
+      margin-bottom: 12px;
     }
 
-    .hero-title {
-      margin: 0 0 6px;
+    .banner h1 {
+      margin: 0 0 5px;
       font-size: 20px;
       font-weight: 800;
     }
 
-    .hero-desc {
+    .banner p {
       margin: 0;
       font-size: 13px;
-      line-height: 1.45;
       color: var(--muted);
+      line-height: 1.4;
     }
 
-    .controls-row {
+    .search-row {
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .input, .select {
       width: 100%;
       padding: 12px 14px;
-      border-radius: var(--radius-md);
+      border-radius: var(--r-md);
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text);
@@ -281,121 +265,109 @@
     }
 
     .input:focus, .select:focus {
-      border-color: var(--accent);
+      border-color: var(--light-pill);
     }
 
-    .stats-strip {
+    .meta-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 12px;
       color: var(--muted);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       padding: 0 2px;
     }
 
     .card {
-      padding: 15px;
-      border-radius: var(--radius-lg);
+      padding: 14px;
+      border-radius: var(--r-lg);
       background: var(--surface);
       border: 1px solid var(--border);
       margin-bottom: 10px;
     }
 
-    .item-top {
+    .row-between {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 8px;
+      align-items: center;
+      gap: 10px;
     }
 
-    .item-title {
+    .item-name {
+      margin: 0 0 4px;
       font-size: 16px;
       font-weight: 700;
-      margin: 0 0 4px;
     }
 
-    .item-desc {
+    .item-text {
+      margin: 0;
       font-size: 13px;
       color: var(--muted);
-      margin: 0;
-      line-height: 1.4;
+      line-height: 1.38;
     }
 
-    .price-pill {
-      padding: 6px 10px;
-      border-radius: var(--radius-sm);
-      background: rgba(0, 229, 255, 0.12);
-      border: 1px solid rgba(0, 229, 255, 0.28);
-      color: var(--accent);
+    .price-tag {
+      padding: 7px 11px;
+      border-radius: var(--r-sm);
+      background: var(--light-pill);
+      color: var(--light-ink);
       font-weight: 800;
       font-size: 14px;
       white-space: nowrap;
     }
 
-    .item-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 12px;
-      gap: 10px;
-    }
-
-    .stock-tag {
-      font-size: 12px;
-      color: var(--ok);
-      font-weight: 600;
-    }
-
-    .btn-primary {
+    .btn-light {
       padding: 11px 16px;
-      border-radius: var(--radius-md);
+      border-radius: var(--r-md);
       border: none;
-      background: linear-gradient(135deg, var(--accent), #52b6ff);
-      color: #05070d;
+      background: var(--light-pill);
+      color: var(--light-ink);
       font-weight: 800;
       font-size: 13px;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(0, 229, 255, 0.22);
     }
 
-    .btn-primary:active {
+    .btn-light:active {
       transform: scale(0.98);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
+    .btn-red {
+      padding: 11px 16px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--border-strong);
+      background: linear-gradient(135deg, #c81d3b, #7d0e22);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
     }
 
-    .btn-secondary {
+    .btn-row {
       width: 100%;
-      padding: 12px 14px;
-      border-radius: var(--radius-md);
-      background: var(--surface-2);
+      padding: 13px 14px;
+      border-radius: var(--r-md);
+      background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text);
-      font-weight: 600;
       font-size: 14px;
-      cursor: pointer;
-      text-align: left;
+      font-weight: 600;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      cursor: pointer;
       margin-bottom: 8px;
     }
 
-    .method-switch {
+    .switch-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-bottom: 12px;
     }
 
-    .method-btn {
+    .switch-btn {
       padding: 11px;
-      border-radius: var(--radius-md);
+      border-radius: var(--r-md);
       background: var(--surface-2);
       border: 1px solid var(--border);
       color: var(--text);
@@ -404,13 +376,13 @@
       cursor: pointer;
     }
 
-    .method-btn.active {
-      background: rgba(0, 229, 255, 0.14);
-      border-color: var(--accent);
-      color: var(--accent);
+    .switch-btn.active {
+      background: var(--light-pill);
+      color: var(--light-ink);
+      border-color: var(--light-pill);
     }
 
-    .presets {
+    .preset-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
@@ -419,7 +391,7 @@
 
     .preset-btn {
       padding: 10px;
-      border-radius: var(--radius-sm);
+      border-radius: var(--r-sm);
       background: var(--surface-2);
       border: 1px solid var(--border);
       color: var(--text);
@@ -429,48 +401,50 @@
     }
 
     .preset-btn.active {
-      border-color: var(--accent);
-      color: var(--accent);
+      border-color: var(--light-pill);
+      background: rgba(245, 216, 221, 0.16);
+      color: var(--light-pill);
     }
 
-    .code-box {
+    .code-pill {
       margin-top: 10px;
       padding: 10px 12px;
-      border-radius: var(--radius-sm);
-      background: rgba(24, 224, 156, 0.1);
-      border: 1px solid rgba(24, 224, 156, 0.3);
-      font-size: 13px;
+      border-radius: var(--r-sm);
+      background: rgba(56, 229, 168, 0.12);
+      border: 1px solid rgba(56, 229, 168, 0.35);
       color: var(--ok);
       font-weight: 700;
+      font-size: 13px;
     }
 
-    .empty-box {
-      text-align: center;
-      padding: 28px 16px;
-      border-radius: var(--radius-lg);
+    .empty {
+      padding: 26px 16px;
+      border-radius: var(--r-lg);
       background: var(--surface);
       border: 1px dashed var(--border);
+      text-align: center;
       color: var(--muted);
       font-size: 14px;
     }
 
-    .footer-links {
+    .footer {
       margin-top: 22px;
       padding-top: 14px;
       border-top: 1px solid var(--border);
-      font-size: 12px;
-      color: var(--muted);
       display: flex;
       flex-wrap: wrap;
       gap: 14px;
+      font-size: 12px;
+      color: var(--muted);
     }
 
-    .footer-links a {
+    .footer a {
       color: var(--muted);
       text-decoration: none;
     }
 
-    .bottom-nav {
+    /* Нижняя навигация со светлым активным табом */
+    .bottom-bar {
       position: fixed;
       left: 0;
       right: 0;
@@ -478,52 +452,55 @@
       z-index: 50;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      background: rgba(10, 12, 20, 0.92);
-      backdrop-filter: blur(18px);
+      gap: 2px;
+      background: rgba(22, 7, 10, 0.94);
+      backdrop-filter: blur(16px);
       border-top: 1px solid var(--border);
-      padding: 6px 4px max(8px, env(safe-area-inset-bottom));
+      padding: 6px 6px max(8px, env(safe-area-inset-bottom));
     }
 
-    .nav-item {
+    .tab-btn {
       background: none;
       border: none;
+      border-radius: 12px;
       color: var(--muted);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      justify-content: center;
+      gap: 2px;
+      padding: 6px 2px;
       font-size: 11px;
       font-weight: 600;
-      padding: 6px 2px;
       cursor: pointer;
     }
 
-    .nav-item .ico {
+    .tab-btn .ic {
       font-size: 16px;
-      line-height: 1;
+      line-height: 1.1;
     }
 
-    .nav-item.active {
-      color: var(--accent);
+    .tab-btn.active {
+      background: var(--light-pill);
+      color: var(--light-ink);
+      font-weight: 800;
     }
 
     .toast {
       position: fixed;
       left: 50%;
       bottom: 78px;
-      transform: translateX(-50%) translateY(14px);
+      transform: translateX(-50%) translateY(12px);
       z-index: 120;
-      max-width: 90%;
       padding: 10px 16px;
       border-radius: 999px;
-      background: #171c2c;
-      border: 1px solid var(--accent);
-      color: var(--text);
+      background: var(--light-pill);
+      color: var(--light-ink);
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.22s ease, transform 0.22s ease;
+      transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
     .toast.show {
@@ -533,41 +510,41 @@
   </style>
 </head>
 <body>
-  <!-- Загрузочный экран -->
   <div id="preloader">
-    <div class="loader-core">
+    <div class="loader-emblem">
       <div class="loader-ring"></div>
-      <div class="loader-brand">DS</div>
+      DS
     </div>
-    <div class="loader-title">DARK STORE</div>
-    <div class="loader-bar"><span></span></div>
-    <div class="loader-sub" id="loaderStatus">Подключаем витрину...</div>
+    <div class="loader-name">Dark Store</div>
+    <div class="loader-track"><span></span></div>
+    <div class="loader-status" id="loaderStatus">Загрузка каталога...</div>
   </div>
 
   <div class="app">
     <header class="topbar">
-      <div class="brand-box">
-        <div class="brand-badge">DS</div>
+      <div class="brand">
+        <div class="brand-icon">DS</div>
         <div>
-          <div class="brand-name">Dark Store</div>
-          <div class="brand-tag" id="soldCounterTag">Продано: 0</div>
+          <div class="brand-title">Dark Store</div>
+          <div class="brand-sub" id="soldText">Продано: 0</div>
         </div>
       </div>
-      <div class="top-actions">
-        <div class="pill-bal" id="topBalance">0.00 ₽</div>
-        <button class="btn-ghost" onclick="openSupport()">Чат</button>
+      <div class="top-right">
+        <div class="bal-chip" id="topBal">0.00 ₽</div>
+        <button class="icon-btn" onclick="refreshState(true)" title="Обновить">↻</button>
+        <button class="icon-btn" onclick="openSupport()" title="Поддержка">💬</button>
       </div>
     </header>
 
     <!-- Магазин -->
     <section id="sec-shop" class="section active">
-      <div class="hero-card">
-        <h1 class="hero-title">Каталог позиций</h1>
-        <p class="hero-desc">Мгновенная выдача после покупки и получение кодов входа прямо в приложении.</p>
+      <div class="banner">
+        <h1>Магазин</h1>
+        <p>Актуальные позиции с моментальной выдачей и получением кодов входа.</p>
       </div>
 
-      <div class="controls-row">
-        <input id="searchInput" class="input" type="text" placeholder="Поиск по названию или описанию..." oninput="renderCatalog()" />
+      <div class="search-row">
+        <input id="searchInput" class="input" type="text" placeholder="Поиск по позициям..." oninput="renderCatalog()" />
         <select id="sortSelect" class="select" onchange="renderCatalog()">
           <option value="default">По порядку</option>
           <option value="price_asc">Дешевле</option>
@@ -575,53 +552,53 @@
         </select>
       </div>
 
-      <div class="stats-strip">
-        <span id="catalogSummary">0 шт. • 0 поз.</span>
-        <button class="btn-ghost" onclick="refreshState(true)">Обновить</button>
+      <div class="meta-bar">
+        <span id="catalogCount">0 шт. • 0 поз.</span>
+        <span id="userIdBadge">ID: —</span>
       </div>
 
-      <div id="catalogList"></div>
+      <div id="catalogBox"></div>
     </section>
 
     <!-- Мои покупки -->
     <section id="sec-orders" class="section">
-      <div class="hero-card">
-        <h1 class="hero-title">Мои покупки</h1>
-        <p class="hero-desc">Нажмите «Получить код», чтобы подтянуть свежий код входа по заказу.</p>
+      <div class="banner">
+        <h1>Мои покупки</h1>
+        <p>Нажмите «Получить код», чтобы подтянуть код входа для выбранного заказа.</p>
       </div>
-      <div id="ordersList"></div>
+      <div id="ordersBox"></div>
     </section>
 
     <!-- Пополнение -->
     <section id="sec-deposit" class="section">
-      <div class="hero-card">
-        <h1 class="hero-title">Пополнение баланса</h1>
-        <p class="hero-desc">Текущий баланс: <strong id="depBalance">0.00 ₽</strong></p>
+      <div class="banner">
+        <h1>Пополнение баланса</h1>
+        <p>Текущий баланс: <strong id="depBal">0.00 ₽</strong></p>
       </div>
 
       <div class="card">
-        <div class="method-switch">
-          <button id="mStars" class="method-btn active" onclick="setDepositMethod('stars')">⭐ Звёзды → ₽</button>
-          <button id="mTon" class="method-btn" onclick="setDepositMethod('ton')">💎 TON → ₽</button>
+        <div class="switch-grid">
+          <button id="btnMethodStars" class="switch-btn active" onclick="setMethod('stars')">⭐ Звёзды → ₽</button>
+          <button id="btnMethodTon" class="switch-btn" onclick="setMethod('ton')">💎 TON → ₽</button>
         </div>
 
-        <div id="presetsBox" class="presets">
-          <button class="preset-btn active" onclick="pickPreset(10, this)">10 ⭐</button>
-          <button class="preset-btn" onclick="pickPreset(25, this)">25 ⭐</button>
-          <button class="preset-btn" onclick="pickPreset(50, this)">50 ⭐</button>
+        <div id="starPresets" class="preset-grid">
+          <button class="preset-btn active" onclick="selectPreset(10, this)">10 ⭐</button>
+          <button class="preset-btn" onclick="selectPreset(25, this)">25 ⭐</button>
+          <button class="preset-btn" onclick="selectPreset(50, this)">50 ⭐</button>
         </div>
 
-        <input id="depAmountInput" class="input" type="number" min="1" step="any" value="10" placeholder="Введите сумму" oninput="updateDepositPreview()" style="margin-bottom: 10px;" />
+        <input id="depInput" class="input" type="number" min="1" step="any" value="10" oninput="updateDepositUI()" style="margin-bottom: 10px;" />
 
-        <div id="tonWalletInfo" style="display:none; font-size:12px; color:var(--muted); margin-bottom:10px; word-break:break-all;">
-          Кошелёк TON: <strong id="tonWalletAddr" style="color:var(--text);">—</strong>
+        <div id="tonBox" style="display:none; font-size:12px; color:var(--muted); margin-bottom:10px; word-break:break-all;">
+          Кошелёк TON: <strong id="tonAddr" style="color:var(--text);">—</strong>
         </div>
 
-        <div style="font-size:12px; color:var(--muted); margin-bottom:12px;" id="rateInfo">
+        <div id="rateText" style="font-size:12px; color:var(--muted); margin-bottom:12px;">
           Курс: 1 ⭐ = 1.6 ₽
         </div>
 
-        <button id="depSubmitBtn" class="btn-primary" style="width:100%;" onclick="submitDeposit()">
+        <button id="depBtn" class="btn-light" style="width:100%;" onclick="sendDeposit()">
           ОПЛАТИТЬ 10 ⭐ (+16.00 ₽)
         </button>
       </div>
@@ -629,67 +606,71 @@
 
     <!-- Профиль -->
     <section id="sec-profile" class="section">
-      <div class="hero-card">
-        <h1 class="hero-title" id="profName">Покупатель</h1>
-        <p class="hero-desc" id="profMeta">@gerulev • ID: 622034883</p>
-        <p class="hero-desc" style="margin-top:8px; color:var(--text);">
-          Баланс: <strong id="profBalance">0.00 ₽</strong> • Заказов: <strong id="profOrdersCount">0</strong>
+      <div class="banner">
+        <h1 id="profTitle">Покупатель</h1>
+        <p id="profSub">@username • ID: —</p>
+        <p style="margin:8px 0 0; font-size:13px; color:var(--text);">
+          Баланс: <strong id="profBal">0.00 ₽</strong> • Заказов: <strong id="profOrders">0</strong>
         </p>
       </div>
 
-      <button class="btn-secondary" onclick="switchTab('deposit')">
+      <button class="btn-row" onclick="switchTab('deposit')">
         <span>💳 Пополнить баланс</span>
         <span>›</span>
       </button>
-      <button class="btn-secondary" onclick="openSupport()">
-        <span>🆘 Поддержка (@gerulev)</span>
-        <span>↗</span>
+      <button class="btn-row" onclick="switchTab('orders')">
+        <span>📦 История покупок и коды</span>
+        <span>›</span>
       </button>
-      <button class="btn-secondary" onclick="refreshState(true)">
-        <span>🔄 Обновить данные</span>
-        <span>↻</span>
+      <button class="btn-row" onclick="openSupport()">
+        <span>🆘 Написать в поддержку (@gerulev)</span>
+        <span>↗</span>
       </button>
     </section>
 
     <!-- Помощь -->
     <section id="sec-help" class="section">
-      <div class="hero-card">
-        <h1 class="hero-title">Поддержка и инфо</h1>
-        <p class="hero-desc">По вопросам выдачи аккаунтов, пополнений и кодов входа пишите напрямую в поддержку.</p>
+      <div class="banner">
+        <h1>Поддержка</h1>
+        <p>По вопросам покупок, пополнений и кодов входа пишите напрямую в чат поддержки.</p>
       </div>
 
-      <button class="btn-secondary" onclick="openSupport()">
-        <span>Написать @gerulev</span>
+      <button class="btn-row" onclick="openSupport()">
+        <span>Открыть чат с поддержкой (@gerulev)</span>
         <span>↗</span>
+      </button>
+      <button class="btn-row" onclick="refreshState(true)">
+        <span>Синхронизировать состояние с сервером</span>
+        <span>↻</span>
       </button>
     </section>
 
-    <footer class="footer-links">
+    <footer class="footer">
       <span>Dark Store • 2026</span>
-      <a href="#" onclick="showToast('Политика конфиденциальности актуальна в боте'); return false;">Конфиденциальность</a>
-      <a href="#" onclick="showToast('Условия использования актуальны в боте'); return false;">Соглашение</a>
+      <a href="#" onclick="toast('Политика конфиденциальности'); return false;">Политика конфиденциальности</a>
+      <a href="#" onclick="toast('Пользовательское соглашение'); return false;">Соглашение</a>
     </footer>
   </div>
 
-  <nav class="bottom-nav">
-    <button class="nav-item active" data-tab="shop" onclick="switchTab('shop')">
-      <span class="ico">🛍</span>
+  <nav class="bottom-bar">
+    <button class="tab-btn active" data-tab="shop" onclick="switchTab('shop')">
+      <span class="ic">🛍</span>
       <span>Магазин</span>
     </button>
-    <button class="nav-item" data-tab="orders" onclick="switchTab('orders')">
-      <span class="ico">📦</span>
+    <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')">
+      <span class="ic">📦</span>
       <span>Мои</span>
     </button>
-    <button class="nav-item" data-tab="deposit" onclick="switchTab('deposit')">
-      <span class="ico">₽</span>
+    <button class="tab-btn" data-tab="deposit" onclick="switchTab('deposit')">
+      <span class="ic">₽</span>
       <span>Пополнить</span>
     </button>
-    <button class="nav-item" data-tab="profile" onclick="switchTab('profile')">
-      <span class="ico">👤</span>
+    <button class="tab-btn" data-tab="profile" onclick="switchTab('profile')">
+      <span class="ic">👤</span>
       <span>Профиль</span>
     </button>
-    <button class="nav-item" data-tab="help" onclick="switchTab('help')">
-      <span class="ico">💬</span>
+    <button class="tab-btn" data-tab="help" onclick="switchTab('help')">
+      <span class="ic">💬</span>
       <span>Помощь</span>
     </button>
   </nav>
@@ -707,7 +688,7 @@
     const USER_ID = tgUser && tgUser.id ? Number(tgUser.id) : 622034883;
     const API_BASE = window.location.origin;
 
-    const state = {
+    const appState = {
       balance_rub: 0,
       rub_per_star: 1.6,
       rub_per_ton: 115,
@@ -715,15 +696,15 @@
       total_sold_count: 0,
       items: [],
       orders: [],
-      depMethod: "stars",
+      method: "stars",
     };
 
-    function showToast(msg) {
+    function toast(msg) {
       const el = document.getElementById("toast");
       el.textContent = msg;
       el.classList.add("show");
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+      clearTimeout(window.__t);
+      window.__t = setTimeout(() => el.classList.remove("show"), 2300);
     }
 
     function openSupport() {
@@ -732,170 +713,161 @@
       else window.open(url, "_blank");
     }
 
-    function switchTab(tabName) {
+    function switchTab(tab) {
       document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
-      document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
-      const sec = document.getElementById("sec-" + tabName);
-      const nav = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
-      if (sec) sec.classList.add("active");
-      if (nav) nav.classList.add("active");
+      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+      document.getElementById("sec-" + tab)?.classList.add("active");
+      document.querySelector(`.tab-btn[data-tab="${tab}"]`)?.classList.add("active");
     }
 
-    function escHtml(str) {
-      return String(str || "")
+    function esc(v) {
+      return String(v || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
     }
 
-    function renderAll() {
-      const balStr = `${Number(state.balance_rub || 0).toFixed(2)} ₽`;
-      document.getElementById("topBalance").textContent = balStr;
-      document.getElementById("depBalance").textContent = balStr;
-      document.getElementById("profBalance").textContent = balStr;
-      document.getElementById("soldCounterTag").textContent = `Продано: ${state.total_sold_count || 0}`;
+    function render() {
+      const bal = `${Number(appState.balance_rub || 0).toFixed(2)} ₽`;
+      document.getElementById("topBal").textContent = bal;
+      document.getElementById("depBal").textContent = bal;
+      document.getElementById("profBal").textContent = bal;
+      document.getElementById("soldText").textContent = `Продано: ${appState.total_sold_count || 0}`;
+      document.getElementById("userIdBadge").textContent = `ID: ${USER_ID}`;
 
-      const fullName = tgUser
+      const name = tgUser
         ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ") || "Покупатель"
         : "Михаил";
-      const uname = tgUser && tgUser.username ? `@${tgUser.username}` : "@gerulev";
-      document.getElementById("profName").textContent = fullName;
-      document.getElementById("profMeta").textContent = `${uname} • ID: ${USER_ID}`;
-      document.getElementById("profOrdersCount").textContent = (state.orders || []).length;
+      const handle = tgUser && tgUser.username ? `@${tgUser.username}` : "@gerulev";
+      document.getElementById("profTitle").textContent = name;
+      document.getElementById("profSub").textContent = `${handle} • ID: ${USER_ID}`;
+      document.getElementById("profOrders").textContent = (appState.orders || []).length;
 
-      if (state.crypto_wallet) {
-        document.getElementById("tonWalletAddr").textContent = state.crypto_wallet;
+      if (appState.crypto_wallet) {
+        document.getElementById("tonAddr").textContent = appState.crypto_wallet;
       }
 
       renderCatalog();
       renderOrders();
-      updateDepositPreview();
+      updateDepositUI();
     }
 
     function renderCatalog() {
-      const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      const query = (document.getElementById("searchInput").value || "").trim().toLowerCase();
       const sort = document.getElementById("sortSelect").value;
-      let list = (state.items || []).filter((it) => {
-        if (!q) return true;
-        return (it.title || "").toLowerCase().includes(q) || (it.description || "").toLowerCase().includes(q);
+      let list = (appState.items || []).filter((it) => {
+        if (!query) return true;
+        return (it.title || "").toLowerCase().includes(query) || (it.description || "").toLowerCase().includes(query);
       });
 
       if (sort === "price_asc") list.sort((a, b) => Number(a.price_rub) - Number(b.price_rub));
       if (sort === "price_desc") list.sort((a, b) => Number(b.price_rub) - Number(a.price_rub));
 
-      const totalUnits = list.reduce((acc, x) => acc + Number(x.count || 0), 0);
-      document.getElementById("catalogSummary").textContent = `${totalUnits} шт. • ${list.length} поз.`;
+      const qty = list.reduce((sum, x) => sum + Number(x.count || 0), 0);
+      document.getElementById("catalogCount").textContent = `${qty} шт. • ${list.length} поз.`;
 
-      const box = document.getElementById("catalogList");
+      const box = document.getElementById("catalogBox");
       if (!list.length) {
-        box.innerHTML = `<div class="empty-box">Сейчас подходящих товаров в наличии нет.</div>`;
+        box.innerHTML = `<div class="empty">Пока нет товаров в наличии.</div>`;
         return;
       }
 
       box.innerHTML = list.map((it) => `
         <div class="card">
-          <div class="item-top">
+          <div class="row-between" style="align-items:flex-start;">
             <div>
-              <h3 class="item-title">${escHtml(it.title)}</h3>
-              <p class="item-desc">${escHtml(it.description || "Готовая позиция к выдаче")}</p>
+              <h3 class="item-name">${esc(it.title)}</h3>
+              <p class="item-text">${esc(it.description || "Готовая позиция к выдаче")}</p>
             </div>
-            <div class="price-pill">${Number(it.price_rub).toFixed(0)} ₽</div>
+            <div class="price-tag">${Number(it.price_rub).toFixed(0)} ₽</div>
           </div>
-          <div class="item-bottom">
-            <span class="stock-tag">В наличии: ${Number(it.count)} шт.</span>
-            <button class="btn-primary" onclick="buyItem('${escHtml(it.key)}')">Купить</button>
+          <div class="row-between" style="margin-top:12px;">
+            <span style="font-size:12px; color:var(--ok); font-weight:700;">В наличии: ${Number(it.count)} шт.</span>
+            <button class="btn-light" onclick="buyItem('${esc(it.key)}')">Купить</button>
           </div>
         </div>
       `).join("");
     }
 
     function renderOrders() {
-      const orders = state.orders || [];
-      const box = document.getElementById("ordersList");
+      const orders = appState.orders || [];
+      const box = document.getElementById("ordersBox");
       if (!orders.length) {
-        box.innerHTML = `<div class="empty-box">У вас пока нет оформленных заказов.</div>`;
+        box.innerHTML = `<div class="empty">У вас пока нет покупок.</div>`;
         return;
       }
 
-      box.innerHTML = [...orders].reverse().map((ord) => {
-        const oid = escHtml(ord.order_id || "");
-        const title = escHtml(ord.title || "Позиция");
-        const phone = escHtml(ord.phone || "—");
-        const codeHtml = ord.code
-          ? `<div class="code-box">Код входа: ${escHtml(ord.code)}</div>`
-          : "";
-        return `
-          <div class="card">
-            <div style="font-size:16px; font-weight:800; margin-bottom:4px;">${phone}</div>
-            <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">${title} • ${oid}</div>
-            <button class="btn-primary" onclick="requestCode('${oid}')">Получить код</button>
-            ${codeHtml}
-          </div>
-        `;
-      }).join("");
+      box.innerHTML = [...orders].reverse().map((o) => `
+        <div class="card">
+          <div style="font-size:16px; font-weight:800; margin-bottom:4px;">${esc(o.phone || "—")}</div>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">${esc(o.title || "Позиция")} • ${esc(o.order_id || "")}</div>
+          <button class="btn-light" onclick="getCode('${esc(o.order_id || "")}')">Получить код</button>
+          ${o.code ? `<div class="code-pill">Код входа: ${esc(o.code)}</div>` : ""}
+        </div>
+      `).join("");
     }
 
-    function setDepositMethod(method) {
-      state.depMethod = method;
-      document.getElementById("mStars").classList.toggle("active", method === "stars");
-      document.getElementById("mTon").classList.toggle("active", method === "ton");
-      document.getElementById("presetsBox").style.display = method === "stars" ? "grid" : "none";
-      document.getElementById("tonWalletInfo").style.display = method === "ton" ? "block" : "none";
-      document.getElementById("depAmountInput").value = method === "stars" ? "10" : "1";
-      updateDepositPreview();
+    function setMethod(m) {
+      appState.method = m;
+      document.getElementById("btnMethodStars").classList.toggle("active", m === "stars");
+      document.getElementById("btnMethodTon").classList.toggle("active", m === "ton");
+      document.getElementById("starPresets").style.display = m === "stars" ? "grid" : "none";
+      document.getElementById("tonBox").style.display = m === "ton" ? "block" : "none";
+      document.getElementById("depInput").value = m === "stars" ? "10" : "1";
+      updateDepositUI();
     }
 
-    function pickPreset(val, btn) {
+    function selectPreset(val, btn) {
       document.querySelectorAll(".preset-btn").forEach((b) => b.classList.remove("active"));
-      if (btn) btn.classList.add("active");
-      document.getElementById("depAmountInput").value = String(val);
-      updateDepositPreview();
+      btn?.classList.add("active");
+      document.getElementById("depInput").value = String(val);
+      updateDepositUI();
     }
 
-    function updateDepositPreview() {
-      const raw = parseFloat(document.getElementById("depAmountInput").value || "0");
-      const amt = Number.isFinite(raw) && raw > 0 ? raw : 0;
-      const btn = document.getElementById("depSubmitBtn");
-      const rateEl = document.getElementById("rateInfo");
+    function updateDepositUI() {
+      const val = parseFloat(document.getElementById("depInput").value || "0");
+      const amt = Number.isFinite(val) && val > 0 ? val : 0;
+      const btn = document.getElementById("depBtn");
+      const rate = document.getElementById("rateText");
 
-      if (state.depMethod === "stars") {
+      if (appState.method === "stars") {
         const stars = Math.max(1, Math.round(amt || 10));
-        const rub = (stars * Number(state.rub_per_star || 1.6)).toFixed(2);
-        rateEl.textContent = `Курс: 1 ⭐ = ${state.rub_per_star} ₽`;
+        const rub = (stars * Number(appState.rub_per_star || 1.6)).toFixed(2);
+        rate.textContent = `Курс: 1 ⭐ = ${appState.rub_per_star} ₽`;
         btn.textContent = `ОПЛАТИТЬ ${stars} ⭐ (+${rub} ₽)`;
       } else {
         const ton = amt > 0 ? amt : 1;
-        const rub = (ton * Number(state.rub_per_ton || 115)).toFixed(2);
-        rateEl.textContent = `Курс: 1 TON = ${state.rub_per_ton} ₽`;
+        const rub = (ton * Number(appState.rub_per_ton || 115)).toFixed(2);
+        rate.textContent = `Курс: 1 TON = ${appState.rub_per_ton} ₽`;
         btn.textContent = `ОТПРАВИТЬ ЗАЯВКУ ${ton} TON (~${rub} ₽)`;
       }
     }
 
-    async function buyItem(itemKey) {
+    async function buyItem(key) {
       try {
         const res = await fetch(`${API_BASE}/api/buy`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: USER_ID, item_key: itemKey }),
+          body: JSON.stringify({ user_id: USER_ID, item_key: key }),
         });
         const data = await res.json();
         if (!data.ok) {
-          showToast(data.error || "Ошибка покупки");
+          toast(data.error || "Ошибка покупки");
           return;
         }
-        showToast(`Выдан ${data.phone || "аккаунт"}`);
+        toast(`Выдано: ${data.phone || "аккаунт"}`);
         await refreshState(false);
         switchTab("orders");
-      } catch (e) {
-        showToast("Ошибка соединения с сервером");
+      } catch {
+        toast("Ошибка соединения");
       }
     }
 
-    async function submitDeposit() {
-      const raw = parseFloat(document.getElementById("depAmountInput").value || "0");
-      if (!Number.isFinite(raw) || raw <= 0) {
-        showToast("Введите корректную сумму");
+    async function sendDeposit() {
+      const val = parseFloat(document.getElementById("depInput").value || "0");
+      if (!Number.isFinite(val) || val <= 0) {
+        toast("Введите сумму");
         return;
       }
 
@@ -903,35 +875,31 @@
         const res = await fetch(`${API_BASE}/api/deposit`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: USER_ID,
-            method: state.depMethod,
-            amount: raw,
-          }),
+          body: JSON.stringify({ user_id: USER_ID, method: appState.method, amount: val }),
         });
         const data = await res.json();
         if (!data.ok) {
-          showToast(data.error || "Ошибка пополнения");
+          toast(data.error || "Ошибка пополнения");
           return;
         }
         if (data.invoice_link && tg && tg.openInvoice) {
           tg.openInvoice(data.invoice_link, (status) => {
             if (status === "paid") {
-              showToast("Оплата прошла!");
+              toast("Оплата зачислена");
               refreshState(false);
             }
           });
         } else if (data.sent_to_bot) {
-          showToast("Счёт отправлен в чат с ботом");
+          toast("Счёт отправлен в бот");
         } else {
-          showToast("Заявка отправлена владельцу");
+          toast("Заявка отправлена");
         }
-      } catch (e) {
-        showToast("Ошибка сети при пополнении");
+      } catch {
+        toast("Ошибка сети");
       }
     }
 
-    async function requestCode(orderId) {
+    async function getCode(orderId) {
       try {
         const res = await fetch(`${API_BASE}/api/code`, {
           method: "POST",
@@ -940,46 +908,37 @@
         });
         const data = await res.json();
         if (data.ok && data.code) {
-          showToast(`Код: ${data.code}`);
+          toast(`Код: ${data.code}`);
           await refreshState(false);
         } else {
-          showToast(data.error || "Запрос кода отправлен");
+          toast(data.error || "Запрос кода отправлен");
         }
-      } catch (e) {
-        showToast("Не удалось запросить код");
+      } catch {
+        toast("Не удалось запросить код");
       }
     }
 
     async function refreshState(notify) {
-      const statusEl = document.getElementById("loaderStatus");
+      const st = document.getElementById("loaderStatus");
       try {
-        if (statusEl) statusEl.textContent = "Синхронизация данных...";
+        if (st) st.textContent = "Синхронизация с сервером...";
         const res = await fetch(`${API_BASE}/api/state?user_id=${USER_ID}`);
         const data = await res.json();
         if (data && data.ok) {
-          state.balance_rub = data.balance_rub;
-          state.rub_per_star = data.rub_per_star;
-          state.rub_per_ton = data.rub_per_ton;
-          state.crypto_wallet = data.crypto_wallet;
-          state.total_sold_count = data.total_sold_count;
-          state.items = data.items || [];
-          state.orders = data.orders || [];
-          renderAll();
-          if (notify) showToast("Данные обновлены");
+          Object.assign(appState, data);
+          render();
+          if (notify) toast("Обновлено");
         }
-      } catch (e) {
-        if (notify) showToast("Не удалось обновить данные");
+      } catch {
+        if (notify) toast("Ошибка обновления");
       }
     }
 
-    (async function boot() {
-      const statusEl = document.getElementById("loaderStatus");
-      if (statusEl) statusEl.textContent = "Загрузка каталога Dark Store...";
+    (async function init() {
       await refreshState(false);
       setTimeout(() => {
-        const pre = document.getElementById("preloader");
-        if (pre) pre.classList.add("hidden");
-      }, 420);
+        document.getElementById("preloader")?.classList.add("hidden");
+      }, 380);
     })();
   </script>
 </body>
