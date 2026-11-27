@@ -23,7 +23,6 @@ shop.app_btn = _app_btn
 def welcome_caption(user=None) -> str:
     return (
         f"<b>Привет, {shop._format_user_label(user)} — это DarkHub</b>"
-"
         "Магазин аккаунтов Telegram: быстро, надёжно, по честной цене.
 
 "
