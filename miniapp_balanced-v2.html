@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>DarkHub</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#160609;--surface:#24080e;--surface-2:#310c14;--surface-3:#3e1019;
+  --border:rgba(255,182,193,.14);--border-hi:rgba(255,105,128,.44);
+  --ink:#fff6f7;--muted:#cca1a9;--crimson:#ff2e51;--rose:#f3d5da;--rose-ink:#22060b;
+  --ok:#38e5a8;--bad:#ff6b84;--gold:#ffc24d;
+  --r-xl:22px;--r-lg:18px;--r-md:14px;--r-sm:10px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100%;
+  background:radial-gradient(circle at 50% -12%,rgba(255,46,81,.26),transparent 52%),
+  radial-gradient(circle at 88% 18%,rgba(155,16,40,.22),transparent 48%),var(--bg);
+  color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Inter,sans-serif;overflow-x:hidden}
+body.lite *{animation:none!important;transition:none!important}
+
+/* ── иконки (красные, с свечением) ── */
+.ico{stroke:url(#rs);fill:rgba(255,46,81,.30);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 5px rgba(255,46,81,.65));display:block}
+.ico.solid{fill:url(#rg)}
+.dock-btn.active .ico,.btn-rose .ico,.pill-choice.active .ico{stroke:var(--rose-ink);fill:rgba(34,6,11,.22);filter:none}
+
+/* ── прелоадер ── */
+#preloader{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;
+  background:radial-gradient(circle at 50% 34%,rgba(255,46,81,.26),transparent 56%),#110406;transition:opacity .4s,visibility .4s}
+#preloader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.pre-stage{position:relative;width:96px;height:96px;display:grid;place-items:center}
+.pre-aura{position:absolute;inset:-10px;border-radius:32px;background:radial-gradient(circle,rgba(255,46,81,.35),transparent 70%);animation:pulseAura 1.8s ease-in-out infinite}
+.pre-ring-outer{position:absolute;inset:-6px;border-radius:28px;border:2px solid transparent;border-top-color:var(--crimson);border-bottom-color:var(--rose);animation:spinCw 1.15s linear infinite}
+.pre-ring-inner{position:absolute;inset:4px;border-radius:21px;border:1.5px dashed rgba(243,213,218,.45);animation:spinCcw 1.9s linear infinite}
+.pre-core{position:relative;width:74px;height:74px;border-radius:22px;background:linear-gradient(145deg,#5a0d1c,#21050a);border:1px solid rgba(255,130,148,.45);display:grid;place-items:center;font-weight:900;font-size:22px;color:var(--rose);box-shadow:0 0 34px rgba(255,46,81,.35)}
+@keyframes spinCw{to{transform:rotate(360deg)}}
+@keyframes spinCcw{to{transform:rotate(-360deg)}}
+@keyframes pulseAura{0%,100%{transform:scale(.95);opacity:.65}50%{transform:scale(1.08);opacity:1}}
+.pre-brand{font-size:18px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+.pre-bar{width:220px;height:5px;border-radius:999px;background:rgba(243,213,218,.14);overflow:hidden}
+.pre-bar-fill{height:100%;width:20%;border-radius:999px;background:linear-gradient(90deg,var(--crimson),var(--rose));transition:width .25s}
+.pre-meta{display:flex;gap:10px;font-size:12px;color:var(--muted)}
+.pre-pct{color:var(--rose);font-weight:800}
+
+/* ── каркас ── */
+.wrap{max-width:560px;margin:0 auto;padding:12px 14px 104px}
+.header{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;margin-bottom:12px;border-radius:var(--r-lg);background:rgba(28,7,11,.88);backdrop-filter:blur(14px);border:1px solid var(--border)}
+.brand-left{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-ava{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#ffe4e9,#ff6981);color:var(--rose-ink);font-weight:900;font-size:13px;display:grid;place-items:center;flex-shrink:0}
+.brand-t{font-size:16px;font-weight:800;line-height:1.1}
+.brand-s{font-size:11px;color:var(--muted)}
+.header-right{display:flex;align-items:center;gap:7px}
+.bal-chip{padding:8px 11px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--border-hi);color:var(--rose);font-weight:800;font-size:13px;white-space:nowrap;cursor:pointer}
+.round-btn{width:34px;height:34px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0;position:relative}
+.dot{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:var(--crimson);box-shadow:0 0 8px var(--crimson);display:none}
+
+/* ── бегущая строка ── */
+.ticker{overflow:hidden;border-radius:var(--r-md);background:linear-gradient(90deg,rgba(255,46,81,.18),rgba(49,12,20,.9));border:1px solid var(--border-hi);margin-bottom:12px;position:relative}
+.ticker::before,.ticker::after{content:"";position:absolute;top:0;bottom:0;width:28px;z-index:2;pointer-events:none}
+.ticker::before{left:0;background:linear-gradient(90deg,#2a0a11,transparent)}
+.ticker::after{right:0;background:linear-gradient(270deg,#2a0a11,transparent)}
+.ticker-track{display:flex;width:max-content;will-change:transform}
+.tick-item{display:flex;align-items:center;gap:7px;padding:10px 18px;font-size:13px;white-space:nowrap;color:var(--rose)}
+.tick-item b{color:var(--ink)}
+@keyframes tick{to{transform:translateX(-50%)}}
+
+.page{display:none;animation:popIn .2s ease}
+.page.active{display:block}
+@keyframes popIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.hero{padding:16px;border-radius:var(--r-xl);background:linear-gradient(140deg,rgba(255,46,81,.22),rgba(72,9,21,.65));border:1px solid var(--border-hi);margin-bottom:12px}
+.hero h1{margin:0 0 4px;font-size:21px;font-weight:800}
+.hero p{margin:0;font-size:13px;color:var(--muted);line-height:1.4}
+.group-label{margin:16px 2px 8px;font-size:12px;font-weight:800;color:var(--muted);display:flex;align-items:center;gap:8px}
+.card{padding:14px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);margin-bottom:10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat-box{padding:12px 10px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);text-align:center}
+.stat-num{font-size:17px;font-weight:800;color:var(--rose)}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.input,.select,.textarea{width:100%;padding:12px 14px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);color:var(--ink);font-size:14px;outline:none;font-family:inherit}
+.textarea{min-height:82px;resize:vertical}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--rose)}
+.btn-rose{padding:11px 16px;border-radius:var(--r-md);border:none;background:var(--rose);color:var(--rose-ink);font-weight:800;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-rose:active{transform:scale(.98)}
+.btn-dark{padding:10px 14px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer}
+.btn-rose:disabled,.btn-dark:disabled{opacity:.5}
+.menu-tile{width:100%;padding:13px 14px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;margin-bottom:8px;text-align:left}
+.tile-ico{width:36px;height:36px;border-radius:11px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;flex-shrink:0}
+.tile-title{font-size:14px;font-weight:700}
+.tile-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.pill-choice{padding:10px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer}
+.pill-choice.active{background:var(--rose);color:var(--rose-ink);border-color:var(--rose)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip-tag{padding:8px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.chip-tag.active{border-color:var(--rose);color:var(--rose);background:rgba(243,213,218,.14)}
+.price-box{padding:7px 11px;border-radius:var(--r-sm);background:var(--rose);color:var(--rose-ink);font-weight:800;font-size:14px;white-space:nowrap}
+.credit-box{padding:12px 14px;border-radius:var(--r-md);background:rgba(56,229,168,.11);border:1px solid rgba(56,229,168,.34);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.wallet-box{padding:12px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);margin-bottom:12px}
+.wallet-addr{font-size:12px;color:var(--rose);word-break:break-all;margin:6px 0 8px;font-family:ui-monospace,Menlo,monospace}
+.err-box{margin-top:10px;padding:10px 12px;border-radius:var(--r-sm);background:rgba(255,107,132,.14);border:1px solid rgba(255,107,132,.4);color:var(--bad);font-size:12px;font-weight:600;display:none}
+.code-alert{margin-top:10px;padding:10px 12px;border-radius:var(--r-sm);background:rgba(56,229,168,.12);border:1px solid rgba(56,229,168,.35);color:var(--ok);font-weight:700;font-size:13px}
+.status-pill{padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;background:var(--surface-2);border:1px solid var(--border);color:var(--rose)}
+.status-pill.done{color:var(--ok);border-color:rgba(56,229,168,.35)}
+.empty-card{padding:24px 16px;border-radius:var(--r-lg);background:var(--surface);border:1px dashed var(--border);text-align:center;color:var(--muted);font-size:13px}
+.switch{width:44px;height:24px;border-radius:999px;background:var(--surface-3);border:1px solid var(--border);position:relative;cursor:pointer;flex-shrink:0}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s}
+.switch.on{background:rgba(255,46,81,.35);border-color:var(--rose)}
+.switch.on::after{transform:translateX(20px);background:var(--rose)}
+
+/* ── распределение каталога по цене ── */
+.tier-head{display:flex;align-items:center;gap:8px;margin:16px 2px 8px;font-size:14px;font-weight:800}
+.tier-head small{color:var(--muted);font-weight:600;font-size:12px}
+.tier-dot{width:10px;height:10px;border-radius:50%}
+.t-cheap{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.t-mid{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.t-rich{background:var(--crimson);box-shadow:0 0 8px var(--crimson)}
+
+/* ── отзывы ── */
+.stars{display:inline-flex;gap:2px;vertical-align:middle}
+.stars .ico{fill:var(--gold);stroke:var(--gold);filter:none}
+.stars .off{fill:none;stroke:rgba(255,194,77,.35)}
+.rev-sum{display:flex;align-items:center;gap:14px}
+.rev-big{font-size:34px;font-weight:900;color:var(--rose);line-height:1}
+.star-pick{display:flex;gap:6px;justify-content:center;margin:6px 0 12px}
+.star-pick button{background:none;border:none;padding:2px;cursor:pointer}
+.star-pick .ico{fill:none;stroke:rgba(255,194,77,.45);filter:none}
+.star-pick .on .ico{fill:var(--gold);stroke:var(--gold);filter:drop-shadow(0 0 6px rgba(255,194,77,.6))}
+.modal{position:fixed;inset:0;z-index:200;background:rgba(10,2,4,.78);display:none;align-items:flex-end;justify-content:center;padding:14px}
+.modal.show{display:flex}
+.modal-box{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border-hi);border-radius:var(--r-xl);padding:16px}
+
+/* ── чат поддержки ── */
+.chat{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto;padding:4px 2px 8px}
+.bub{max-width:82%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.35;word-break:break-word;white-space:pre-wrap}
+.bub span{display:block;font-size:10px;opacity:.6;margin-top:3px;text-align:right}
+.bub.me{align-self:flex-end;background:var(--rose);color:var(--rose-ink);border-bottom-right-radius:5px}
+.bub.ad{align-self:flex-start;background:var(--surface-3);border:1px solid var(--border-hi);border-bottom-left-radius:5px}
+.chat-bar{display:flex;gap:8px;margin-top:8px}
+.chat-bar .input{flex:1}
+
+/* ── нижнее меню ── */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(6,1fr);gap:2px;padding:6px 6px max(8px,env(safe-area-inset-bottom));background:rgba(22,6,9,.94);backdrop-filter:blur(16px);border-top:1px solid var(--border)}
+.dock-btn{position:relative;background:none;border:none;border-radius:12px;color:var(--muted);padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;cursor:pointer}
+.dock-btn.active{background:var(--rose);color:var(--rose-ink);font-weight:800}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(10px);z-index:300;padding:10px 16px;border-radius:999px;background:var(--rose);color:var(--rose-ink);font-size:13px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.dock-btn .dot{top:5px;right:calc(50% - 20px)}
+.spin{width:12px;height:12px;border:2px solid var(--border-hi);border-top-color:var(--crimson);border-radius:50%;display:inline-block;animation:spinCw 1s linear infinite;vertical-align:-2px;margin-right:6px}
+.sb{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:2px;border:1px solid}
+.sb.ok{color:var(--ok);border-color:rgba(56,229,168,.4);background:rgba(56,229,168,.1)}
+.sb.bad{color:var(--bad);border-color:rgba(255,107,132,.4);background:rgba(255,107,132,.1)}
+.wheel-wrap{position:relative;width:min(78vw,300px);margin:20px auto}
+.wheel-wrap svg{width:100%;display:block;border-radius:50%;box-shadow:0 0 40px rgba(255,46,81,.45);transition:transform 4.2s cubic-bezier(.12,.7,.1,1)}
+.wheel-pointer{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:22px solid var(--rose);z-index:3;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.spin-result{min-height:28px;text-align:center;font-size:18px;color:var(--ok);margin-bottom:10px}
+.flag{width:44px;height:32px;border-radius:7px;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.flag-ph{display:grid;place-items:center;background:var(--surface-3);font-size:20px}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+.tag{font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px;background:var(--surface-3);border:1px solid var(--border);color:var(--rose)}
+.tag.bad{color:var(--bad);border-color:rgba(255,107,132,.45);background:rgba(255,107,132,.12)}
+.tag.ok{color:var(--ok);border-color:rgba(56,229,168,.4);background:rgba(56,229,168,.1)}
+.cardfoot{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.bigprice{font-size:22px;font-weight:900;color:var(--rose)}
+.lot-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;cursor:pointer}
+.lot-row b{font-size:15px}.lot-row small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.kv span:first-child{color:var(--muted)}.kv span:last-child{text-align:right;font-weight:600}
+.modal-box{max-height:84vh;overflow-y:auto}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:5px;border-radius:16px;background:var(--surface);border:1px solid var(--border);margin-bottom:10px}
+.seg button{padding:10px 4px;border:none;border-radius:12px;background:none;color:var(--muted);font-weight:800;font-size:13px;cursor:pointer}
+.seg button.active{background:var(--rose);color:var(--rose-ink)}
+.seg i{font-style:normal;opacity:.7;font-weight:700;margin-left:3px}
+.sec-head{display:flex;align-items:center;gap:8px;margin:18px 2px 10px;font-size:15px;font-weight:800}
+.sec-head small{color:var(--muted);font-weight:600;font-size:12px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{padding:14px;border-radius:18px;background:linear-gradient(160deg,var(--surface-2),var(--surface));border:1px solid var(--border);display:flex;flex-direction:column;gap:5px;cursor:pointer}
+.tile:active{transform:scale(.98)}
+.tile .flag{width:54px;height:38px;margin-bottom:4px}
+.tile .tn{font-size:15px;font-weight:800}
+.tile .tp{font-size:18px;font-weight:900;color:var(--rose)}
+.tile .tc{font-size:12px;color:var(--muted)}
+.mix{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.mix span{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+.mix .g{color:var(--ok);background:rgba(56,229,168,.1)}.mix .r{color:var(--bad);background:rgba(255,107,132,.12)}
+.acc{border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;overflow:hidden}
+.acc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;cursor:pointer}
+.acc-head b{font-size:15px}.acc-head small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.acc-body{display:none;padding:0 12px 12px}
+.acc.open .acc-body{display:block}
+.acc.open{border-color:var(--border-hi)}
+.copy{cursor:pointer;color:var(--rose);word-break:break-all}
+.lb-row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);margin-bottom:8px}
+.lb-row.me{border-color:var(--rose);background:var(--surface-2)}
+.lb-rank{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:13px;background:var(--surface-3);color:var(--rose);flex-shrink:0}
+.lb-row:nth-child(1) .lb-rank{background:#ffc24d;color:#3a2600}.lb-row:nth-child(2) .lb-rank{background:#cfd3da;color:#222}.lb-row:nth-child(3) .lb-rank{background:#d08a54;color:#2b1500}
+.lb-name{flex:1;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-val{font-weight:800;color:var(--rose);text-align:right;font-size:14px}.lb-val small{display:block;color:var(--muted);font-weight:600;font-size:11px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px}
+.hrow small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.plus{color:var(--ok);font-weight:900;white-space:nowrap}.minus{color:var(--bad);font-weight:900;white-space:nowrap}
+.banner{display:none;padding:12px;border-radius:var(--r-md);background:rgba(255,107,132,.14);border:1px solid rgba(255,107,132,.4);color:var(--bad);font-size:13px;font-weight:700;margin-bottom:12px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="rs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8097"/><stop offset="1" stop-color="#ff1f48"/></linearGradient>
+  <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5c78"/><stop offset="1" stop-color="#b30f2c"/></linearGradient>
+</defs></svg>
+
+<div id="preloader">
+  <div class="pre-stage"><div class="pre-aura"></div><div class="pre-ring-outer"></div><div class="pre-ring-inner"></div><div class="pre-core">DH</div></div>
+  <div class="pre-brand">DarkHub</div>
+  <div class="pre-bar"><div class="pre-bar-fill" id="preFill"></div></div>
+  <div class="pre-meta"><span id="preStatus">Запуск ядра...</span><span class="pre-pct" id="prePct">15%</span></div>
+</div>
+
+<div class="wrap">
+  <header class="header">
+    <div class="brand-left">
+      <div class="brand-ava">DH</div>
+      <div><div class="brand-t">DarkHub</div><div class="brand-s" id="hdrStatus">Онлайн • Продано: 0</div></div>
+    </div>
+    <div class="header-right">
+      <div class="bal-chip" id="hdrBal" onclick="goPage('deposit')">0.00 ₽</div>
+      <button class="round-btn" onclick="syncState(true)" title="Обновить"><i data-ic="refresh" data-s="18"></i></button>
+    </div>
+  </header>
+
+  <div id="authBanner" class="banner">Откройте приложение через Telegram — иначе баланс и покупки недоступны.</div>
+
+  <!-- МАГАЗИН -->
+  <section id="page-shop" class="page active">
+    <div class="ticker" id="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+
+    <div class="hero">
+      <h1>DarkHub</h1>
+      <p>Магазин номеров и аккаунтов Telegram. Выбери страну — и сразу после оплаты получишь номер, пароль и код входа.</p>
+    </div>
+
+    <input id="qInput" class="input" style="margin-bottom:8px" type="text" placeholder="Страна, код или год регистрации" oninput="renderShop()" />
+
+    <div class="seg" id="sbSeg">
+      <button class="active" onclick="setSb('all',this)">Все <i id="cAll">0</i></button>
+      <button onclick="setSb('nosb',this)">Без СБ <i id="cNosb">0</i></button>
+      <button onclick="setSb('sb',this)">С СБ <i id="cSb">0</i></button>
+    </div>
+    <div class="chips" id="priceChips">
+      <button class="chip-tag active" onclick="setPf('all',this)">Все цены</button>
+      <button class="chip-tag" onclick="setPf('cheap',this)">Дешёвые</button>
+      <button class="chip-tag" onclick="setPf('rich',this)">Дорогие</button>
+      <button class="chip-tag" data-prem="1" onclick="togglePrem(this)">Premium</button>
+    </div>
+
+    <div class="row" style="font-size:12px;color:var(--muted);margin-bottom:4px;padding:0 2px">
+      <span id="shopMeta">0 шт. • 0 поз.</span>
+      <span id="apiStateTag" style="color:var(--ok)">API: проверка...</span>
+    </div>
+    <div id="shopList"></div>
+  </section>
+
+  <!-- ЗАКАЗЫ -->
+  <section id="page-orders" class="page">
+    <div class="hero"><h1>Мои заказы</h1><p>Получите код входа и оставьте отзыв о покупке.</p></div>
+    <div class="grid-2" style="margin-bottom:12px">
+      <button id="ordTabActive" class="pill-choice active" onclick="setOrderMode('active')">Активные • <span id="cntActive">0</span></button>
+      <button id="ordTabDone" class="pill-choice" onclick="setOrderMode('done')">Завершённые • <span id="cntDone">0</span></button>
+    </div>
+    <div id="ordersList"></div>
+  </section>
+
+  <!-- ПОПОЛНЕНИЕ -->
+  <section id="page-deposit" class="page">
+    <div class="hero"><h1>Пополнение баланса</h1><p>Ваш баланс: <strong id="depCurrentBal">0.00 ₽</strong></p></div>
+    <div class="card">
+      <div class="group-label" style="margin-top:0">Способ оплаты</div>
+      <div class="grid-2" style="margin-bottom:12px">
+        <button id="payStars" class="pill-choice active" onclick="choosePay('stars')">⭐ Звёзды → ₽</button>
+        <button id="payTon" class="pill-choice" onclick="choosePay('ton')">💎 TON → ₽</button>
+      </div>
+      <div class="group-label" style="margin-top:0">Быстрый выбор</div>
+      <div id="presetsWrap" class="grid-3" style="margin-bottom:10px">
+        <button class="pill-choice active" onclick="setAmt(10,this)">10 ⭐</button>
+        <button class="pill-choice" onclick="setAmt(25,this)">25 ⭐</button>
+        <button class="pill-choice" onclick="setAmt(50,this)">50 ⭐</button>
+      </div>
+      <input id="amtInput" class="input" type="number" min="0.1" step="any" value="10" oninput="refreshPayCalc()" style="margin-bottom:10px" />
+      <div class="credit-box"><span style="font-size:13px;color:var(--muted)">Зачислим на баланс</span><strong style="font-size:16px;color:var(--ok)" id="creditPreview">+16.00 ₽</strong></div>
+      <div id="tonBox" class="wallet-box" style="display:none">
+        <div style="font-size:12px;color:var(--muted)">Кошелёк TON для перевода:</div>
+        <div class="wallet-addr" id="tonWalletVal"></div>
+        <button class="btn-dark" style="width:100%" onclick="copyWallet()">Копировать адрес кошелька</button>
+        <div id="tonMemoWrap" style="display:none;margin-top:12px">
+          <div style="font-size:12px;color:var(--bad);font-weight:700">Обязательно укажите комментарий к переводу:</div>
+          <div class="wallet-addr" id="tonMemoVal" style="font-size:16px;font-weight:800"></div>
+          <div class="grid-2">
+            <button class="btn-dark" onclick="copyText($('tonMemoVal').textContent)">Копировать комментарий</button>
+            <button class="btn-rose" onclick="openPayLink()">Открыть кошелёк</button>
+          </div>
+          <div id="tonWait" class="code-alert"><i class="spin"></i>Ждём перевод — баланс пополнится автоматически</div>
+        </div>
+      </div>
+      <div id="calcLine" style="font-size:12px;color:var(--muted);margin-bottom:12px">Курс: 1 ⭐ = 1.6 ₽</div>
+      <button id="paySubmit" class="btn-rose" style="width:100%" onclick="runDeposit()">ОПЛАТИТЬ</button>
+      <div id="depErrBox" class="err-box"></div>
+    </div>
+    <div class="group-label">История действий пополнения</div>
+    <div id="depHistoryBox"></div>
+  </section>
+
+  <!-- ОТЗЫВЫ -->
+  <section id="page-reviews" class="page">
+    <div class="hero">
+      <h1>Отзывы</h1>
+      <div class="rev-sum" style="margin-top:8px">
+        <div class="rev-big" id="revAvg">—</div>
+        <div><div id="revStars"></div><div style="font-size:12px;color:var(--muted);margin-top:3px" id="revCount">0 отзывов</div></div>
+      </div>
+    </div>
+    <button class="btn-rose" style="width:100%;margin-bottom:12px" onclick="openReviewLatest()"><i data-ic="star" data-s="18"></i> Оставить отзыв</button>
+    <div id="reviewsList"></div>
+    <button class="menu-tile" style="margin-top:8px" onclick="openReviewsChannel()">
+      <div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="send" data-s="18"></i></div><div><div class="tile-title">Канал отзывов</div><div class="tile-sub">Больше отзывов в Telegram</div></div></div><span>↗</span>
+    </button>
+  </section>
+
+  <!-- ПРОФИЛЬ -->
+  <section id="page-profile" class="page">
+    <div class="card">
+      <div class="row" style="justify-content:flex-start;gap:12px;margin-bottom:12px">
+        <div class="brand-ava" id="profAva" style="width:52px;height:52px;border-radius:50%;font-size:18px">DH</div>
+        <div>
+          <div style="font-size:18px;font-weight:800" id="profName">Покупатель</div>
+          <div class="row" style="justify-content:flex-start;gap:6px;margin-top:4px;flex-wrap:wrap">
+            <span class="chip-tag" id="profHandle" style="padding:4px 9px">@user</span>
+            <span class="chip-tag" id="profIdChip" style="padding:4px 9px">ID: 0</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--surface-2);margin-bottom:0">
+        <div class="row">
+          <div><div style="font-size:12px;color:var(--muted)">Ваш баланс</div><div style="font-size:22px;font-weight:900;color:var(--rose)" id="profBal">0.00 ₽</div></div>
+          <button class="btn-rose" onclick="goPage('deposit')">+ Пополнить</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="stat-box"><div class="stat-num" id="stOrders">0</div><div class="stat-lbl">Ваших заказов</div></div>
+      <div class="stat-box"><div class="stat-num" id="stSold">0</div><div class="stat-lbl">Продано всего</div></div>
+      <div class="stat-box"><div class="stat-num" id="stItems">0</div><div class="stat-lbl">В наличии</div></div>
+    </div>
+    <div class="group-label">Разделы</div>
+    <button class="menu-tile" onclick="goPage('roulette')"><div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="wheel" data-s="18"></i></div><div><div class="tile-title">Рулетка</div><div class="tile-sub" id="rouletteTileSub">Бесплатная попытка раз в день</div></div></div><span>›</span></button>
+    <button class="menu-tile" onclick="goPage('leaders')"><div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="trophy" data-s="18"></i></div><div><div class="tile-title">Лидеры</div><div class="tile-sub">Кто больше всех купил и пополнил</div></div></div><span>›</span></button>
+    <button class="menu-tile" onclick="goPage('history')"><div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="clock" data-s="18"></i></div><div><div class="tile-title">История баланса</div><div class="tile-sub">Пополнения, покупки, бонусы</div></div></div><span>›</span></button>
+    <button class="menu-tile" onclick="goPage('referral')"><div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="gift" data-s="18"></i></div><div><div class="tile-title">Пригласить друга</div><div class="tile-sub">Бонус на баланс за каждого друга</div></div></div><span>›</span></button>
+    <button class="menu-tile" onclick="goPage('promo')"><div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="ticket" data-s="18"></i></div><div><div class="tile-title">Промокод</div><div class="tile-sub">Введи код — получи рубли</div></div></div><span>›</span></button>
+    <button class="menu-tile" onclick="goPage('faq')"><div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="help" data-s="18"></i></div><div><div class="tile-title">FAQ</div><div class="tile-sub">Ответы на частые вопросы</div></div></div><span>›</span></button>
+    <button class="menu-tile" onclick="goPage('orders')"><div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="box" data-s="18"></i></div><div><div class="tile-title">Мои покупки</div><div class="tile-sub">Активные и завершённые заказы</div></div></div><span>›</span></button>
+    <button class="menu-tile" onclick="goPage('help')"><div class="row" style="justify-content:flex-start"><div class="tile-ico"><i data-ic="chat" data-s="18"></i></div><div><div class="tile-title">Чат поддержки</div><div class="tile-sub">Напишите — ответим прямо здесь</div></div></div><span>›</span></button>
+    <div class="group-label">Настройки</div>
+    <div class="card">
+      <div class="row">
+        <div><div class="tile-title">Оптимизированный режим</div><div class="tile-sub">Отключает анимации на слабых устройствах</div></div>
+        <div id="swLite" class="switch" onclick="toggleLite(this)"></div>
+      </div>
+    </div>
+    <div class="card" style="font-size:12px;color:var(--muted);line-height:1.55">
+      <div>Ваш ID: <strong id="diagUid" style="color:var(--ink)">—</strong></div>
+      <div>Версия: <strong style="color:var(--ink)">r7 • лидеры, история, рефералка, промокоды, FAQ</strong></div>
+      <div>Сервер: <strong id="diagStatus" style="color:var(--ok)">—</strong></div>
+    </div>
+  </section>
+
+  <!-- РУЛЕТКА -->
+  <section id="page-roulette" class="page">
+    <div class="hero"><h1>Рулетка</h1><p id="spinHint">Одна бесплатная попытка в день</p></div>
+    <div class="wheel-wrap"><div class="wheel-pointer"></div><svg id="wheelSvg" viewBox="0 0 200 200"></svg></div>
+    <div id="spinResult" class="spin-result"></div>
+    <button id="spinBtn" class="btn-rose" style="width:100%" onclick="spinRoulette()">Крутить</button>
+    <button class="btn-dark" style="width:100%;margin-top:8px" onclick="goPage('profile')">‹ Назад в профиль</button>
+  </section>
+
+  <!-- ЛИДЕРЫ -->
+  <section id="page-leaders" class="page">
+    <div class="hero"><h1>Лидеры</h1><p>Топ-10 покупателей и тех, кто больше всех пополнил баланс.</p></div>
+    <div class="grid-2" style="margin-bottom:12px">
+      <button id="lbBuy" class="pill-choice active" onclick="setLb('buy')">По покупкам</button>
+      <button id="lbDon" class="pill-choice" onclick="setLb('don')">По пополнениям</button>
+    </div>
+    <div id="lbList"></div>
+    <button class="btn-dark" style="width:100%;margin-top:8px" onclick="goPage('profile')">‹ Назад в профиль</button>
+  </section>
+
+  <!-- ИСТОРИЯ БАЛАНСА -->
+  <section id="page-history" class="page">
+    <div class="hero"><h1>История баланса</h1><p>Последние 50 операций: пополнения, покупки, бонусы.</p></div>
+    <div id="histList"></div>
+    <button class="btn-dark" style="width:100%;margin-top:8px" onclick="goPage('profile')">‹ Назад в профиль</button>
+  </section>
+
+  <!-- РЕФЕРАЛКА -->
+  <section id="page-referral" class="page">
+    <div class="hero"><h1>Пригласи друга</h1><p id="refText">Отправь другу свою ссылку.</p></div>
+    <div class="card">
+      <div style="font-size:12px;color:var(--muted)">Твоя ссылка</div>
+      <div class="wallet-addr" id="refLink" style="font-size:13px">—</div>
+      <div class="grid-2"><button class="btn-dark" onclick="copyText(state.referral && state.referral.link)">Копировать</button>
+      <button class="btn-rose" onclick="shareRef()">Поделиться</button></div>
+    </div>
+    <div class="grid-3">
+      <div class="stat-box"><div class="stat-num" id="refInvited">0</div><div class="stat-lbl">Пришло</div></div>
+      <div class="stat-box"><div class="stat-num" id="refPaid">0</div><div class="stat-lbl">Купили</div></div>
+      <div class="stat-box"><div class="stat-num" id="refEarned">0 ₽</div><div class="stat-lbl">Заработано</div></div>
+    </div>
+    <button class="btn-dark" style="width:100%;margin-top:12px" onclick="goPage('profile')">‹ Назад в профиль</button>
+  </section>
+
+  <!-- ПРОМОКОД -->
+  <section id="page-promo" class="page">
+    <div class="hero"><h1>Промокод</h1><p>Введи код и получи рубли на баланс. Один код — один раз на человека.</p></div>
+    <div class="card">
+      <input id="promoInput" class="input" type="text" maxlength="32" placeholder="Например, START" style="text-transform:uppercase;margin-bottom:10px" />
+      <button class="btn-rose" style="width:100%" onclick="applyPromo()">Активировать</button>
+    </div>
+    <button class="btn-dark" style="width:100%;margin-top:8px" onclick="goPage('profile')">‹ Назад в профиль</button>
+  </section>
+
+  <!-- FAQ -->
+  <section id="page-faq" class="page">
+    <div class="hero"><h1>FAQ</h1><p>Ответы на частые вопросы. Нажми на вопрос.</p></div>
+    <div id="faqList"></div>
+    <button class="btn-dark" style="width:100%;margin-top:8px" onclick="goPage('help')">Не нашёл ответ — в поддержку</button>
+  </section>
+
+  <!-- ПОДДЕРЖКА (чат) -->
+  <section id="page-help" class="page">
+    <div class="hero"><h1>Поддержка</h1><p>Пишите прямо здесь — ответ придёт в этот чат и в бота.</p></div>
+    <div class="chips">
+      <button class="chip-tag" onclick="quickTopic('Не приходит код')">Не приходит код</button>
+      <button class="chip-tag" onclick="quickTopic('Слетела сессия')">Слетела сессия</button>
+      <button class="chip-tag" onclick="quickTopic('Не подходит пароль 2FA')">Пароль 2FA</button>
+      <button class="chip-tag" onclick="quickTopic('Вопрос по оплате')">Оплата</button>
+    </div>
+    <div class="card">
+      <div class="chat" id="chatBox"></div>
+      <div class="chat-bar">
+        <input id="chatInput" class="input" type="text" maxlength="1000" placeholder="Сообщение..." onkeydown="if(event.key==='Enter')sendChat()" />
+        <button class="btn-rose" id="chatSend" onclick="sendChat()"><i data-ic="send" data-s="18"></i></button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="dock">
+  <button class="dock-btn active" data-p="shop" onclick="goPage('shop')"><i data-ic="bag"></i><span>Магазин</span></button>
+  <button class="dock-btn" data-p="orders" onclick="goPage('orders')"><i data-ic="box"></i><span>Заказы</span></button>
+  <button class="dock-btn" data-p="deposit" onclick="goPage('deposit')"><i data-ic="coin"></i><span>Пополнить</span></button>
+  <button class="dock-btn" data-p="reviews" onclick="goPage('reviews')"><i data-ic="star"></i><span>Отзывы</span></button>
+  <button class="dock-btn" data-p="profile" onclick="goPage('profile')"><i data-ic="user"></i><span>Профиль</span></button>
+  <button class="dock-btn" data-p="help" onclick="goPage('help')"><i data-ic="chat"></i><span>Поддержка</span><span class="dot" id="chatDot"></span></button>
+</nav>
+
+<!-- модалка аккаунтов -->
+<div class="modal" id="lotModal" onclick="if(event.target===this)closeLot()"><div class="modal-box" id="lotBox"></div></div>
+
+<!-- модалка отзыва -->
+<div class="modal" id="revModal" onclick="if(event.target===this)closeReview()">
+  <div class="modal-box">
+    <div style="font-size:17px;font-weight:800;text-align:center">Ваш отзыв</div>
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:2px" id="revOrderLbl"></div>
+    <div class="star-pick" id="starPick"></div>
+    <textarea id="revText" class="textarea" maxlength="500" placeholder="Расскажите, как всё прошло (необязательно)"></textarea>
+    <div class="grid-2" style="margin-top:10px">
+      <button class="btn-dark" onclick="closeReview()">Отмена</button>
+      <button class="btn-rose" id="revSubmit" onclick="submitReview()">Отправить</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = ((new URLSearchParams(location.search).get("api")) || "https://tg-acc-shop.onrender.com").trim().replace(/\/+$/, "");
+const REVIEWS_URL = "https://t.me/+7N5DvqV20UM3Nzll";
+const DEFAULT_TON_WALLET = "UQBKmNK9ynwmMR_ORkA7Ii2TunYn8RpWsVDEZHOTOZ89ajux";
+// границы распределения по цене (₽) — меняй под себя
+let PRICE_SPLIT = 150;   // приходит с сервера (PRICE_SPLIT в Render)
+
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { tg.ready(); tg.expand(); }
+const INIT_DATA = tg && tg.initData ? tg.initData : "";
+const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+const USER_ID = tgUser ? Number(tgUser.id) : 0;   // у каждого — свой ID, свой баланс
+
+/* ── иконки ── */
+const IC = {
+  bag:'<path d="M5.5 8h13l-1.2 12h-10.6L5.5 8Z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/>',
+  box:'<path d="M12 3l8 4v10l-8 4-8-4V7l8-4Z"/><path d="M4 7l8 4 8-4M12 11v10"/>',
+  coin:'<circle cx="12" cy="12" r="9"/><path d="M10 17V7.5h3.2a2.5 2.5 0 0 1 0 5H8.5M8.5 15h5"/>',
+  star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 20c1-4 4-6 8-6s7 2 8 6Z"/>',
+  chat:'<path d="M4 5h16v11H9.5L4 20.5V5Z"/><path d="M8 9.5h8M8 12.5h5"/>',
+  send:'<path d="M21 3 3 10.5l7 2.5 2.5 7L21 3Z"/><path d="m10 13 4-4"/>',
+  refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  wheel:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/>',
+  trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  gift:'<path d="M4 10h16v10H4zM3 7h18v3H3zM12 7v13"/><path d="M12 7C10 3 6 4 7.5 6.5M12 7c2-4 6-3 4.5-.5"/>',
+  ticket:'<path d="M4 8a2 2 0 0 1 0 4v4h16v-4a2 2 0 0 1 0-4V6H4v2Z"/><path d="M10 7v10"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/>'
+};
+function ic(n, s = 22, cls = "") {
+  return `<svg class="ico ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24">${IC[n] || ""}</svg>`;
+}
+function hydrateIcons() {
+  document.querySelectorAll("[data-ic]").forEach((e) => { e.innerHTML = ic(e.dataset.ic, +e.dataset.s || 22); e.style.display = "contents"; });
+}
+function starsHtml(n, s = 16) {
+  let out = '<span class="stars">';
+  for (let i = 1; i <= 5; i++) out += ic("star", s, i <= n ? "" : "off");
+  return out + "</span>";
+}
+
+/* ── состояние ── */
+const state = {
+  balance_rub: 0, rub_per_star: 1.6, rub_per_ton: 115, crypto_wallet: DEFAULT_TON_WALLET,
+  total_sold_count: 0, items: [], orders: [], recent_sales: [], reviews: { avg: 0, count: 0, list: [] },
+  payMethod: "stars", tier: "all", orderMode: "active", depLogs: [], lite: false,
+  chat: [], page: "shop", reviewOrder: null, reviewRating: 5,
+};
+try {
+  state.lite = JSON.parse(localStorage.getItem("dh_lite") || "false") === true;
+  const logs = JSON.parse(localStorage.getItem("dh_dep_logs") || "[]");
+  if (Array.isArray(logs)) state.depLogs = logs.slice(0, 6);
+} catch {}
+if (state.lite) document.body.classList.add("lite");
+
+/* ── утилиты ── */
+const $ = (id) => document.getElementById(id);
+function esc(s) { return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function setLoaderProgress(p, t) { $("preFill").style.width = Math.max(5, Math.min(100, p)) + "%"; $("prePct").textContent = Math.round(p) + "%"; if (t) $("preStatus").textContent = t; }
+function toast(msg) { const el = $("toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(window.__tt); window.__tt = setTimeout(() => el.classList.remove("show"), 2400); }
+function ago(ts) {
+  const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+  if (s < 60) return "только что";
+  if (s < 3600) return Math.floor(s / 60) + " мин. назад";
+  if (s < 86400) return Math.floor(s / 3600) + " ч. назад";
+  return Math.floor(s / 86400) + " дн. назад";
+}
+function hhmm(ts) { return new Date(ts * 1000).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }); }
+function copyText(t) { if (t) navigator.clipboard?.writeText(t).then(() => toast("Скопировано")); }
+function openLink(url) { if (tg && tg.openTelegramLink && url.includes("t.me")) tg.openTelegramLink(url); else window.open(url, "_blank"); }
+function openReviewsChannel() { openLink(REVIEWS_URL); }
+
+async function api(path, method = "GET", body) {
+  try {
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: { "Content-Type": "application/json", "X-Init-Data": INIT_DATA },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    try { return await res.json(); } catch { return { ok: false, error: "HTTP " + res.status }; }
+  } catch { return { ok: false, error: "Нет связи с сервером", offline: true }; }
+}
+
+/* ── навигация ── */
+function goPage(p) {
+  state.page = p;
+  document.querySelectorAll(".page").forEach((e) => e.classList.remove("active"));
+  document.querySelectorAll(".dock-btn").forEach((e) => e.classList.remove("active"));
+  $("page-" + p)?.classList.add("active");
+  document.querySelector(`.dock-btn[data-p="${p}"]`)?.classList.add("active");
+  if (p === "shop") renderTicker();
+  if (p === "roulette") renderRoulette();
+  if (p === "help") { $("chatDot").style.display = "none"; loadChat(true); }
+  window.scrollTo(0, 0);
+}
+
+/* ── рендер ── */
+function renderAll() {
+  const balStr = Number(state.balance_rub || 0).toFixed(2) + " ₽";
+  $("hdrBal").textContent = balStr; $("depCurrentBal").textContent = balStr; $("profBal").textContent = balStr;
+  $("hdrStatus").textContent = `Онлайн • Продано: ${state.total_sold_count || 0}`;
+
+  const name = tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ") || "Покупатель" : "Гость";
+  $("profAva").textContent = (name.trim()[0] || "D").toUpperCase();
+  $("profName").textContent = name;
+  $("profHandle").textContent = tgUser && tgUser.username ? "@" + tgUser.username : "без username";
+  $("profIdChip").textContent = "ID: " + USER_ID;
+  $("diagUid").textContent = String(USER_ID || "—");
+
+  const orders = state.orders || [];
+  $("cntActive").textContent = orders.filter((o) => !o.finished).length;
+  $("cntDone").textContent = orders.filter((o) => !!o.finished).length;
+  $("stOrders").textContent = orders.length;
+  $("stSold").textContent = state.total_sold_count || 0;
+  $("stItems").textContent = (state.items || []).reduce((a, x) => a + Number(x.count || 0), 0);
+  $("tonWalletVal").textContent = state.crypto_wallet || DEFAULT_TON_WALLET;
+  $("swLite").classList.toggle("on", !!state.lite);
+
+  renderTicker(); renderShop(); renderOrders(); renderDepLogs(); renderReviews(); refreshPayCalc(); renderRoulette(); renderLeaders(); renderHistory(); renderReferral();
+}
+
+let tickX = 0, tickHalf = 0, tickLast = 0;
+function renderTicker() {
+  const sales = state.recent_sales || [];
+  let items = sales.map((x) => `<div class="tick-item">${ic("bag", 16)}<b>${esc(x.title)}</b><span>— куплено ${ago(x.ts)}</span></div>`);
+  if (!items.length) {
+    items = [
+      `<div class="tick-item">${ic("bag", 16)}<b>Продано аккаунтов: ${state.total_sold_count || 0}</b><span>— выдача за секунды</span></div>`,
+      `<div class="tick-item">${ic("star", 16)}<span>Код входа и поддержка — прямо в приложении</span></div>`,
+    ];
+  }
+  const tr = $("tickerTrack");
+  const base = items.join("");
+  tr.innerHTML = base;
+  const w = tr.scrollWidth, box = $("ticker").clientWidth || 360;
+  const reps = w > 10 ? Math.max(1, Math.ceil(box / w)) : 4;   // хватает на всю ширину
+  const one = base.repeat(reps);
+  tr.innerHTML = one + one;                                      // дубль для бесшовного круга
+  tickHalf = tr.scrollWidth / 2;
+}
+function tickLoop(t) {
+  if (tickHalf > 10 && !document.hidden && !state.lite) {
+    const dt = tickLast ? Math.min(t - tickLast, 64) : 16;
+    tickX = (tickX + dt * 0.045) % tickHalf;                     // ~45 px/сек
+    $("tickerTrack").style.transform = `translate3d(${-tickX}px,0,0)`;
+  }
+  tickLast = t;
+  requestAnimationFrame(tickLoop);
+}
+requestAnimationFrame(tickLoop);
+
+let sbf = "all", pf = "all", premOnly = false;
+function tierOf(p) { return Number(p) <= PRICE_SPLIT ? "cheap" : "rich"; }
+function setSb(v, btn) { sbf = v; document.querySelectorAll("#sbSeg button").forEach((b) => b.classList.remove("active")); btn.classList.add("active"); renderShop(); }
+function setPf(v, btn) { pf = v; document.querySelectorAll("#priceChips .chip-tag:not([data-prem])").forEach((b) => b.classList.remove("active")); btn.classList.add("active"); renderShop(); }
+function togglePrem(btn) { premOnly = !premOnly; btn.classList.toggle("active", premOnly); renderShop(); }
+function plural(n, a, b, c) { const m = n % 100, d = n % 10; return m > 10 && m < 20 ? c : d === 1 ? a : d >= 2 && d <= 4 ? b : c; }
+function flagEmoji(iso) { return iso.toUpperCase().replace(/./g, (ch) => String.fromCodePoint(127397 + ch.charCodeAt(0))); }
+function flagImg(c) {
+  const iso = (c.iso || "").toLowerCase();
+  if (!iso) return `<span class="flag flag-ph">🌐</span>`;
+  return `<img class="flag" loading="lazy" alt="" src="https://flagcdn.com/w80/${iso}.png" onerror="this.outerHTML='<span class=&quot;flag flag-ph&quot;>${flagEmoji(iso)}</span>'">`;
+}
+function fmtReg(reg) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(reg || ""); return m ? `${m[3]}.${m[2]}.${m[1]}` : ""; }
+function ageText(reg) {
+  const t = Date.parse(reg); if (!t) return "";
+  const d = Math.max(0, Math.floor((Date.now() - t) / 86400000));
+  return d < 30 ? `${d} дн.` : d < 365 ? `${Math.floor(d / 30)} мес.` : `${Math.floor(d / 365)} г.`;
+}
+function regLine(l) { return l.reg ? `≈ ${fmtReg(l.reg)} · ${ageText(l.reg)}` : "дата не указана"; }
+function ckey(l) { return l.country.iso || l.country.name; }
+
+function lotMatches(l) {
+  const q = ($("qInput").value || "").trim().toLowerCase();
+  if (q) {
+    const hay = `${l.country.name} ${l.country.dial} +${l.country.dial} ${(l.reg || "").slice(0, 4)} ${fmtReg(l.reg)}`.toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  if (sbf === "nosb" && l.sb !== false) return false;
+  if (sbf === "sb" && l.sb !== true) return false;
+  if (pf !== "all" && tierOf(l.price_rub) !== pf) return false;
+  if (premOnly && !l.premium) return false;
+  return true;
+}
+function tilesFor(part) {
+  const map = new Map();
+  part.forEach((l) => { const k = ckey(l); if (!map.has(k)) map.set(k, { k, c: l.country, lots: [] }); map.get(k).lots.push(l); });
+  return [...map.values()].map((g) => ({ ...g, min: Math.min(...g.lots.map((l) => l.price_rub)) })).sort((a, b) => a.min - b.min);
+}
+function tileHtml(g) {
+  const ok = g.lots.filter((l) => l.sb === false).length, bad = g.lots.filter((l) => l.sb === true).length;
+  const mix = (ok || bad) ? `<div class="mix">${ok ? `<span class="g">без СБ ${ok}</span>` : ""}${bad ? `<span class="r">СБ ${bad}</span>` : ""}</div>` : "";
+  return `<div class="tile" onclick="openTile('${esc(g.k)}')">${flagImg(g.c)}
+    <div class="tn">${esc(g.c.name)}</div><div class="tp">${g.lots.length > 1 ? "от " : ""}${Math.round(g.min)} ₽</div>
+    <div class="tc">${g.lots.length} ${plural(g.lots.length, "аккаунт", "аккаунта", "аккаунтов")}</div>${mix}</div>`;
+}
+function renderShop() {
+  if (state.price_split) PRICE_SPLIT = Number(state.price_split);
+  const all = state.lots || [];
+  $("cAll").textContent = all.length;
+  $("cNosb").textContent = all.filter((l) => l.sb === false).length;
+  $("cSb").textContent = all.filter((l) => l.sb === true).length;
+  const lots = all.filter(lotMatches), tiles = tilesFor(lots);
+  $("shopMeta").textContent = `${lots.length} шт. • ${tiles.length} ${plural(tiles.length, "страна", "страны", "стран")}`;
+  $("shopList").innerHTML = tiles.length ? `<div class="tiles">${tiles.map(tileHtml).join("")}</div>` : `<div class="empty-card">Аккаунтов по выбранным условиям сейчас нет.</div>`;
+}
+
+/* ── окно страны: аккаунты раскрываются прямо в списке ── */
+function showLotModal(html) { $("lotBox").innerHTML = html; $("lotModal").classList.add("show"); }
+function closeLot() { $("lotModal").classList.remove("show"); state.openOrderId = null; }
+function openTile(k) {
+  const lots = (state.lots || []).filter((l) => lotMatches(l) && ckey(l) === k)
+    .sort((a, b) => a.price_rub - b.price_rub || (b.reg || "").localeCompare(a.reg || ""));
+  if (!lots.length) return;
+  const c = lots[0].country;
+  showLotModal(`<div class="row" style="margin-bottom:12px"><div class="row" style="gap:10px">${flagImg(c)}
+      <div><b style="font-size:19px">${esc(c.name)}</b><div style="font-size:12px;color:var(--muted)">+${esc(c.dial)} • ${lots.length} ${plural(lots.length, "аккаунт", "аккаунта", "аккаунтов")}</div></div></div>
+      <button class="round-btn" onclick="closeLot()">✕</button></div>` +
+    lots.map((l) => `<div class="acc">
+      <div class="acc-head" onclick="this.parentNode.classList.toggle('open')">
+        <div><b>${esc(l.mask)}</b><small>${regLine(l)}${l.sb === true ? ' · <span style="color:var(--bad);font-weight:700">СБ</span>' : l.sb === false ? ' · <span style="color:var(--ok);font-weight:700">без СБ</span>' : ""}${l.premium ? " · Premium" : ""}</small></div>
+        <div class="bigprice" style="font-size:18px">${Math.round(l.price_rub)} ₽</div></div>
+      <div class="acc-body">
+        <div class="kv"><span>Номер</span><span>откроется после оплаты</span></div>
+        <div class="kv"><span>Спамблок</span><span>${l.sb === true ? "есть" : l.sb === false ? "нет" : "нет данных"}</span></div>
+        <div class="kv"><span>Premium</span><span>${l.premium ? "да" : "нет"}</span></div>
+        ${state.guarantee_hours > 0 ? `<div class="kv"><span>Гарантия</span><span>${state.guarantee_hours} ч.</span></div>` : ""}
+        <div class="kv"><span>Получишь</span><span>${l.auto ? "номер + код входа (авто)" : "номер + код входа"}</span></div>
+        <button class="btn-rose" style="width:100%;margin-top:10px" onclick="buyLot('${esc(l.id)}')">Купить за ${Math.round(l.price_rub)} ₽</button>
+      </div></div>`).join(""));
+}
+function buyLot(id) {
+  const l = (state.lots || []).find((x) => x.id === id); if (!l) return;
+  const msg = `Купить аккаунт ${l.country.name} за ${Math.round(l.price_rub)} ₽?`;
+  if (tg && tg.showConfirm) tg.showConfirm(msg, (ok) => ok && doBuy(l.key, l.id)); else if (confirm(msg)) doBuy(l.key, l.id);
+}
+
+function setOrderMode(m) {
+  state.orderMode = m;
+  $("ordTabActive").classList.toggle("active", m === "active");
+  $("ordTabDone").classList.toggle("active", m === "done");
+  renderOrders();
+}
+function orderCard(o) {
+  const c = o.country || {}, done = !!o.finished, waiting = !o.code && WAIT[o.order_id], id = esc(o.order_id);
+  const st = done ? "Завершён" : waiting ? "Ждём код" : o.code ? "Код получен" : "Активен";
+  return `<div class="card">
+    <div class="row" style="align-items:flex-start;gap:10px">
+      <div class="row" style="gap:10px;justify-content:flex-start">${flagImg(c)}
+        <div><div style="font-size:16px;font-weight:800">${esc(o.phone || "—")}</div>
+        <div style="font-size:12px;color:var(--muted)">${esc(c.name || o.title || "Аккаунт")} • ${id}</div></div></div>
+      <span class="status-pill ${done || o.code ? "done" : ""}">${st}</span>
+    </div>
+    <div class="row" style="margin-top:12px;justify-content:flex-start;gap:8px;flex-wrap:wrap">
+      <button class="btn-rose" onclick="openOrder('${id}')">Инфо / код</button>
+      ${done ? (o.reviewed ? `<span class="status-pill done">Отзыв оставлен</span>` : `<button class="btn-dark" onclick="openReview('${id}')">Оставить отзыв</button>`)
+             : `<button class="btn-dark" onclick="finishOrder('${id}')">Завершить</button>`}
+    </div></div>`;
+}
+function renderOrders() {
+  const raw = [...(state.orders || [])].reverse();
+  const list = raw.filter((o) => (state.orderMode === "done" ? !!o.finished : !o.finished));
+  $("ordersList").innerHTML = list.length ? list.map(orderCard).join("")
+    : `<div class="empty-card">${state.orderMode === "done" ? "Завершённых заказов пока нет." : "Активных заказов пока нет."}</div>`;
+  if (state.openOrderId) renderOrderModal();
+}
+function copyEl(txt, label) { return `<span class="copy" data-c="${esc(txt)}" onclick="copyText(this.dataset.c)">${esc(label || txt)} ⧉</span>`; }
+function openOrder(id) { state.openOrderId = id; renderOrderModal(); $("lotModal").classList.add("show"); }
+function renderOrderModal() {
+  const o = (state.orders || []).find((x) => x.order_id === state.openOrderId); if (!o) return;
+  const c = o.country || {}, done = !!o.finished, waiting = !o.code && WAIT[o.order_id], id = esc(o.order_id);
+  const codeBlock = o.code
+    ? `<div class="code-alert" style="font-size:26px;letter-spacing:.25em;text-align:center;cursor:pointer" data-c="${esc(o.code)}" onclick="copyText(this.dataset.c)">${esc(o.code)}</div>
+       <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">нажми на код, чтобы скопировать</div>`
+    : waiting ? `<div class="code-alert"><i class="spin"></i>Ждём код… он появится здесь сам</div>`
+    : `<button class="btn-rose" style="width:100%" onclick="reqCode('${id}')">Получить код входа</button>`;
+  $("lotBox").innerHTML = `<div class="row" style="margin-bottom:8px"><div class="row" style="gap:10px">${flagImg(c)}
+      <div><b style="font-size:19px">${esc(c.name || "Аккаунт")}</b><div style="font-size:12px;color:var(--muted)">${id}</div></div></div>
+      <button class="round-btn" onclick="closeLot()">✕</button></div>
+    <div class="kv"><span>Номер</span>${copyEl(o.phone)}</div>
+    <div class="kv"><span>2FA / пароль</span>${o.two_fa ? copyEl(o.two_fa) : "<span>нет</span>"}</div>
+    ${o.reg ? `<div class="kv"><span>Регистрация</span><span>≈ ${fmtReg(o.reg)} · ${ageText(o.reg)}</span></div>` : ""}
+    <div class="kv"><span>Спамблок</span><span>${o.sb === true ? "есть" : o.sb === false ? "нет" : "нет данных"}</span></div>
+    <div class="kv"><span>Premium</span><span>${o.premium ? "да" : "нет"}</span></div>
+    <div style="font-size:12px;color:var(--muted);margin:12px 0 8px">Введи номер в Telegram, затем нажми «Получить код» — код появится здесь.</div>
+    ${codeBlock}
+    <div class="grid-2" style="margin-top:14px">
+      ${done ? (o.reviewed ? `<button class="btn-dark" disabled>Отзыв оставлен</button>` : `<button class="btn-dark" onclick="closeLot();openReview('${id}')">Оставить отзыв</button>`)
+             : `<button class="btn-dark" onclick="finishOrder('${id}')">Завершить заказ</button>`}
+      <button class="btn-dark" onclick="closeLot()">Закрыть</button>
+    </div>`;
+}
+function finishOrder(orderId) {
+  const go = async () => {
+    const d = await api("/api/order/finish", "POST", { order_id: orderId });
+    if (!d.ok) { toast(d.error || "Ошибка"); return; }
+    delete WAIT[orderId]; saveWait(); closeLot(); toast("Заказ завершён");
+    await syncState(false);
+    const o = (state.orders || []).find((x) => x.order_id === orderId);
+    if (o && !o.reviewed) setTimeout(() => openReview(orderId), 600);
+  };
+  const msg = "Завершить заказ? Убедись, что ты уже вошёл в аккаунт.";
+  if (tg && tg.showConfirm) tg.showConfirm(msg, (ok) => ok && go()); else if (confirm(msg)) go();
+}
+
+/* ── отзывы ── */
+function renderReviews() {
+  const r = state.reviews || { avg: 0, count: 0, list: [] };
+  $("revAvg").textContent = r.count ? r.avg.toFixed(1) : "—";
+  $("revStars").innerHTML = starsHtml(Math.round(r.avg || 0), 18);
+  $("revCount").textContent = `${r.count} ${r.count % 10 === 1 && r.count % 100 !== 11 ? "отзыв" : "отзывов"}`;
+  $("reviewsList").innerHTML = r.list.length
+    ? r.list.map((x) => `<div class="card"><div class="row"><b>${esc(x.name)}</b>${starsHtml(x.rating, 14)}</div>
+        <div style="font-size:14px;margin-top:6px;line-height:1.4;${x.text ? "" : "color:var(--muted)"}">${esc(x.text || "без комментария")}</div>
+        <div class="row" style="margin-top:8px"><span style="font-size:11px;color:var(--muted)">${ago(x.ts)}${x.edited ? " · изменён" : ""}</span>
+          <span class="row" style="gap:6px">${x.mine ? `<button class="chip-tag" onclick="editReview('${esc(x.id)}')">Изменить</button>` : ""}${state.is_staff ? `<button class="chip-tag" style="color:var(--bad)" onclick="delReview('${esc(x.id)}')">Удалить</button>` : ""}</span></div></div>`).join("")
+    : `<div class="empty-card">Отзывов пока нет. Станьте первым — купите аккаунт и оставьте отзыв.</div>`;
+}
+function openReviewLatest() {
+  const o = [...(state.orders || [])].reverse().find((x) => !x.reviewed);
+  if (!o) { toast((state.orders || []).length ? "Вы уже оставили отзывы на все заказы" : "Отзыв доступен после покупки"); return; }
+  openReview(o.order_id);
+}
+function openReview(orderId) {
+  const o = (state.orders || []).find((x) => x.order_id === orderId);
+  if (!o || o.reviewed) return;
+  state.reviewOrder = orderId; state.reviewRating = 5; state.reviewEditId = null;
+  $("revOrderLbl").textContent = `${o.title || "Заказ"} • ${orderId}`;
+  $("revText").value = "";
+  drawStarPick();
+  $("revModal").classList.add("show");
+}
+function editReview(id) {
+  const r = ((state.reviews || {}).list || []).find((x) => x.id === id); if (!r) return;
+  state.reviewEditId = id; state.reviewRating = r.rating;
+  $("revOrderLbl").textContent = "Редактирование отзыва"; $("revText").value = r.text || "";
+  drawStarPick(); $("revModal").classList.add("show");
+}
+function delReview(id) {
+  const go = async () => {
+    const d = await api("/api/review/delete", "POST", { review_id: id });
+    if (!d.ok) { toast(d.error || "Ошибка"); return; }
+    toast("Отзыв удалён"); await syncState(false);
+  };
+  if (tg && tg.showConfirm) tg.showConfirm("Удалить отзыв?", (ok) => ok && go()); else if (confirm("Удалить отзыв?")) go();
+}
+function closeReview() { $("revModal").classList.remove("show"); }
+function drawStarPick() {
+  $("starPick").innerHTML = [1, 2, 3, 4, 5].map((i) => `<button class="${i <= state.reviewRating ? "on" : ""}" onclick="state.reviewRating=${i};drawStarPick()">${ic("star", 34)}</button>`).join("");
+}
+async function submitReview() {
+  const btn = $("revSubmit"); btn.disabled = true;
+  const body = { rating: state.reviewRating, text: $("revText").value.trim() };
+  const d = state.reviewEditId
+    ? await api("/api/review/edit", "POST", { ...body, review_id: state.reviewEditId })
+    : await api("/api/review", "POST", { ...body, order_id: state.reviewOrder });
+  btn.disabled = false;
+  if (!d.ok) { toast(d.error || "Не удалось отправить"); return; }
+  closeReview(); toast("Спасибо за отзыв!");
+  await syncState(false); goPage("reviews");
+}
+
+/* ── пополнение ── */
+function showDepError(m) { const b = $("depErrBox"); b.style.display = m ? "block" : "none"; b.textContent = m || ""; }
+function choosePay(m) {
+  showDepError(""); state.payMethod = m;
+  $("payStars").classList.toggle("active", m === "stars");
+  $("payTon").classList.toggle("active", m === "ton");
+  $("presetsWrap").style.display = m === "stars" ? "grid" : "none";
+  $("tonBox").style.display = m === "ton" ? "block" : "none";
+  $("amtInput").value = m === "stars" ? "10" : "1";
+  refreshPayCalc();
+}
+function setAmt(v, btn) {
+  showDepError("");
+  document.querySelectorAll("#presetsWrap .pill-choice").forEach((b) => b.classList.remove("active"));
+  btn?.classList.add("active"); $("amtInput").value = String(v); refreshPayCalc();
+}
+function refreshPayCalc() {
+  const p = parseFloat($("amtInput").value || "0"); const amt = Number.isFinite(p) && p > 0 ? p : 0;
+  if (state.payMethod === "stars") {
+    const st = Math.max(1, Math.round(amt || 10)); const rub = (st * Number(state.rub_per_star || 1.6)).toFixed(2);
+    $("calcLine").textContent = `Курс: 1 ⭐ = ${state.rub_per_star} ₽`; $("creditPreview").textContent = `+${rub} ₽`;
+    $("paySubmit").textContent = `ОПЛАТИТЬ ${st} ⭐ (+${rub} ₽)`;
+  } else {
+    const t = amt > 0 ? amt : 1; const rub = (t * Number(state.rub_per_ton || 115)).toFixed(2);
+    $("calcLine").textContent = `Курс: 1 TON = ${state.rub_per_ton} ₽`; $("creditPreview").textContent = `~${rub} ₽`;
+    $("paySubmit").textContent = `ПОЛУЧИТЬ РЕКВИЗИТЫ • ${t} TON (~${rub} ₽)`;
+  }
+}
+function copyWallet() { copyText($("tonWalletVal").textContent.trim()); }
+function addDepLog(text) {
+  state.depLogs.unshift({ text, time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) });
+  state.depLogs = state.depLogs.slice(0, 6);
+  try { localStorage.setItem("dh_dep_logs", JSON.stringify(state.depLogs)); } catch {}
+  renderDepLogs();
+}
+function renderDepLogs() {
+  $("depHistoryBox").innerHTML = state.depLogs.length
+    ? state.depLogs.map((l) => `<div class="card" style="padding:11px 14px"><div class="row" style="font-size:13px"><span>${esc(l.text)}</span><span style="color:var(--muted);font-size:11px">${esc(l.time)}</span></div></div>`).join("")
+    : `<div class="empty-card">Заявок на пополнение пока нет.</div>`;
+}
+async function runDeposit() {
+  showDepError("");
+  const parsed = parseFloat($("amtInput").value || "0");
+  if (!Number.isFinite(parsed) || parsed <= 0) { showDepError("Введите сумму больше 0."); return; }
+  const d = await api("/api/deposit", "POST", { method: state.payMethod, amount: parsed });
+  if (!d.ok) { showDepError(d.error || "Ошибка"); addDepLog("Ошибка: " + (d.error || "")); return; }
+  if (d.invoice_link && tg && tg.openInvoice) {
+    addDepLog(`Счёт на ${parsed} ⭐ открыт`);
+    tg.openInvoice(d.invoice_link, async (st) => {
+      if (st === "paid") { addDepLog(`Оплачено ${parsed} ⭐`); toast("Баланс пополнен!"); setTimeout(() => syncState(false), 1200); }
+      else if (st === "failed") showDepError("Оплата звёздами не прошла.");
+    });
+  } else if (d.invoice_link) { window.open(d.invoice_link, "_blank"); }
+  else if (d.memo) { showTon(d, parsed); }
+}
+
+/* ── TON: автоматическая проверка перевода ── */
+let tonPoll = null;
+function openPayLink() {
+  const u = state.tonPay && state.tonPay.pay_link; if (!u) return;
+  if (tg && tg.openLink) tg.openLink(u); else window.open(u, "_blank");
+}
+function showTon(d, amt) {
+  state.tonPay = d;
+  $("tonWalletVal").textContent = d.wallet || state.crypto_wallet;
+  $("tonMemoVal").textContent = d.memo;
+  $("tonMemoWrap").style.display = "block"; $("tonWait").style.display = "block";
+  addDepLog(`TON: ждём перевод • комментарий ${d.memo}`);
+  const start = Number(state.balance_rub || 0), t0 = Date.now();
+  clearInterval(tonPoll);
+  tonPoll = setInterval(async () => {
+    if (Date.now() - t0 > 20 * 60 * 1000) { clearInterval(tonPoll); $("tonWait").style.display = "none"; return; }
+    await syncState(false);
+    const now = Number(state.balance_rub || 0);
+    if (now > start + 0.001) {
+      clearInterval(tonPoll); $("tonWait").style.display = "none"; $("tonMemoWrap").style.display = "none";
+      toast(`Баланс пополнен: +${(now - start).toFixed(2)} ₽`); addDepLog(`Зачислено +${(now - start).toFixed(2)} ₽ (TON)`);
+    }
+  }, 8000);
+}
+
+/* ── лидеры / история / рефералка / промокод / FAQ ── */
+let lbTab = "buy";
+function setLb(t) {
+  lbTab = t; $("lbBuy").classList.toggle("active", t === "buy"); $("lbDon").classList.toggle("active", t === "don"); renderLeaders();
+}
+function renderLeaders() {
+  const L = state.leaders || { buyers: [], donors: [] };
+  const list = lbTab === "buy" ? L.buyers : L.donors;
+  $("lbList").innerHTML = list.length ? list.map((x, i) => `<div class="lb-row ${x.me ? "me" : ""}"><div class="lb-rank">${i + 1}</div>
+      <div class="lb-name">${esc(x.name)}${x.me ? " (ты)" : ""}</div>
+      <div class="lb-val">${lbTab === "buy" ? `${x.buys} шт.<small>${Math.round(x.spent)} ₽</small>` : `${Math.round(x.dep)} ₽<small>пополнено</small>`}</div></div>`).join("")
+    : `<div class="empty-card">Пока здесь пусто. Стань первым!</div>`;
+}
+const KIND = { dep_stars: "Пополнение звёздами", dep_ton: "Пополнение TON", buy: "Покупка аккаунта", roulette: "Рулетка", promo: "Промокод", ref: "Бонус за друга", gift: "Начисление от магазина" };
+function fmtTs(ts) { return new Date(ts * 1000).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); }
+function renderHistory() {
+  const hs = state.history || [];
+  $("histList").innerHTML = hs.length ? hs.map((x) => `<div class="card hrow"><div><b>${esc(KIND[x.kind] || x.kind)}</b>
+      <small>${x.note ? esc(x.note) + " · " : ""}${fmtTs(x.ts)}</small></div>
+      <div class="${x.amount >= 0 ? "plus" : "minus"}">${x.amount >= 0 ? "+" : ""}${Number(x.amount).toFixed(2)} ₽</div></div>`).join("")
+    : `<div class="empty-card">Операций пока нет.</div>`;
+}
+function renderReferral() {
+  const r = state.referral || {};
+  $("refLink").textContent = r.link || "Ссылка появится, когда бот запустится";
+  $("refInvited").textContent = r.invited || 0; $("refPaid").textContent = r.paid || 0;
+  $("refEarned").textContent = Number(r.earned || 0).toFixed(0) + " ₽";
+  const b = Number(r.bonus || 1);
+  $("refText").textContent = r.trigger === "join"
+    ? `За каждого друга, который перейдёт по твоей ссылке, — ${b} ₽ на баланс.`
+    : `За каждого друга, который купит аккаунт по твоей ссылке, — ${b} ₽ на баланс.`;
+}
+function shareRef() {
+  const link = state.referral && state.referral.link; if (!link) return;
+  const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("Магазин номеров и аккаунтов Telegram")}`;
+  if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
+}
+async function applyPromo() {
+  const code = $("promoInput").value.trim();
+  if (!code) { toast("Введите промокод"); return; }
+  const d = await api("/api/promo", "POST", { code });
+  if (!d.ok) { toast(d.error || "Ошибка"); return; }
+  $("promoInput").value = ""; toast(`Промокод активирован: +${d.amount} ₽`); await syncState(false);
+}
+const FAQ = [
+  ["Как купить аккаунт?", "Откройте «Магазин», выберите страну и аккаунт, нажмите «Купить». Оплата идёт с вашего баланса — пополнить его можно во вкладке «Пополнить»."],
+  ["Как пополнить баланс?", "Вкладка «Пополнить»: звёздами Telegram или в TON. Перевод TON зачисляется автоматически, главное — указать комментарий к переводу, который покажет приложение."],
+  ["Как войти в купленный аккаунт?", "Откройте «Заказы» → «Инфо / код». Введите номер в Telegram, затем нажмите «Получить код» — код появится в этом же окне. Если у аккаунта есть пароль 2FA, он указан там же."],
+  ["Что такое СБ?", "Спамблок — ограничение Telegram: аккаунт не может писать людям, которых нет в контактах. «Без СБ» — аккаунт без этого ограничения."],
+  ["Код не приходит", "Подождите пару минут и нажмите «Получить код» ещё раз. Если не помогло — напишите в поддержку и укажите номер заказа."],
+  ["Когда нажимать «Завершить»?", "Когда вы вошли в аккаунт и всё работает. Заказ переедет в «Завершённые», и можно будет оставить отзыв."],
+  ["Как работает рулетка?", "В профиле: одна бесплатная попытка в день, выигрыш от 1 до 10 ₽ сразу идёт на баланс."],
+  ["Как работает приглашение друзей?", "Раздел «Пригласить друга»: отправьте ссылку, и за каждого друга по условиям раздела начисляются рубли."],
+  ["Как использовать промокод?", "Профиль → «Промокод». Введите код и нажмите «Активировать» — бонус сразу на балансе."],
+];
+function renderFaq() {
+  $("faqList").innerHTML = FAQ.map((q) => `<div class="acc"><div class="acc-head" onclick="this.parentNode.classList.toggle('open')"><b>${esc(q[0])}</b><span>⌄</span></div><div class="acc-body" style="font-size:14px;line-height:1.5;color:var(--muted)">${esc(q[1])}</div></div>`).join("");
+}
+
+/* ── рулетка ── */
+const WHEEL_COLORS = ["#ff2e51", "#a30d28", "#ff6b84", "#7d0a1f", "#ff4d6a", "#c2183a"];
+let wheelRot = 0, spinning = false, rouletteDeadline = 0, wheelSig = "";
+function buildWheel(prizes = [1, 2, 3, 4, 5]) {
+  const n = prizes.length, seg = 360 / n, r = 95, c = 100; let out = "";
+  for (let i = 0; i < n; i++) {
+    const a0 = (i * seg - 90) * Math.PI / 180, a1 = ((i + 1) * seg - 90) * Math.PI / 180;
+    out += `<path d="M${c} ${c} L${(c + r * Math.cos(a0)).toFixed(2)} ${(c + r * Math.sin(a0)).toFixed(2)} A${r} ${r} 0 0 1 ${(c + r * Math.cos(a1)).toFixed(2)} ${(c + r * Math.sin(a1)).toFixed(2)} Z" fill="${WHEEL_COLORS[i % WHEEL_COLORS.length]}" stroke="#160609" stroke-width="2"/>`;
+    const am = (i * seg + seg / 2 - 90) * Math.PI / 180, tx = (c + 62 * Math.cos(am)).toFixed(1), ty = (c + 62 * Math.sin(am)).toFixed(1);
+    out += `<text x="${tx}" y="${ty}" transform="rotate(${i * seg + seg / 2} ${tx} ${ty})" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="${n > 6 ? 14 : 18}" font-weight="800">${prizes[i]}₽</text>`;
+  }
+  $("wheelSvg").innerHTML = out + `<circle cx="100" cy="100" r="14" fill="#160609" stroke="#f3d5da" stroke-width="3"/>`;
+}
+function fmtLeft(s) { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 3600)} ч ${Math.floor((s % 3600) / 60)} мин`; }
+function renderRoulette() {
+  if (spinning) return;
+  const R = state.roulette || { available: false, next_in: 0 };
+  const pr = R.prizes || [1, 2, 3, 4, 5];
+  if (pr.join() !== wheelSig) { wheelSig = pr.join(); buildWheel(pr); }
+  rouletteDeadline = Date.now() + (R.next_in || 0) * 1000;
+  const btn = $("spinBtn"), tile = $("rouletteTileSub");
+  if (R.available) {
+    btn.disabled = false; btn.textContent = "Крутить";
+    $("spinHint").textContent = `Одна бесплатная попытка в день: от ${Math.min(...pr)} до ${Math.max(...pr)} ₽ на баланс`;
+    tile.textContent = "Бесплатная попытка доступна";
+  } else {
+    btn.disabled = true; btn.textContent = "Уже крутили сегодня";
+    $("spinHint").textContent = `Следующая попытка через ${fmtLeft(R.next_in)}`;
+    tile.textContent = `Следующая попытка через ${fmtLeft(R.next_in)}`;
+  }
+}
+setInterval(() => {
+  if (spinning || !state.roulette || state.roulette.available) return;
+  const left = (rouletteDeadline - Date.now()) / 1000;
+  if (left <= 0) { syncState(false); return; }
+  $("spinHint").textContent = `Следующая попытка через ${fmtLeft(left)}`;
+  $("rouletteTileSub").textContent = `Следующая попытка через ${fmtLeft(left)}`;
+}, 30000);
+async function spinRoulette() {
+  if (spinning) return;
+  if (!(state.roulette && state.roulette.available)) { toast("Сегодня вы уже крутили"); return; }
+  spinning = true; $("spinBtn").disabled = true; $("spinResult").textContent = "";
+  const d = await api("/api/roulette", "POST", {});
+  if (!d.ok) {
+    spinning = false; if (d.roulette) state.roulette = d.roulette;
+    renderRoulette(); toast(d.error || "Ошибка"); return;
+  }
+  const prizes = (d.roulette && d.roulette.prizes) || [1, 2, 3, 4, 5], n = prizes.length, seg = 360 / n;
+  const v = d.prize, center = Math.max(0, prizes.indexOf(v)) * seg + seg / 2, jitter = (Math.random() - 0.5) * seg * 0.6;
+  wheelRot = (Math.floor(wheelRot / 360) + 6) * 360 + (360 - center) + jitter;
+  $("wheelSvg").style.transform = `rotate(${wheelRot}deg)`;
+  setTimeout(() => {
+    spinning = false;
+    state.roulette = d.roulette; state.balance_rub = d.balance_rub;
+    $("spinResult").innerHTML = `Вы выиграли <b>+${v} ₽</b>`;
+    toast(`+${v} ₽ на баланс!`);
+    renderAll();
+  }, 4400);
+}
+
+/* ── покупка / код ── */
+function buyItem(key) {
+  const it = state.items.find((x) => x.key === key); if (!it) return;
+  const msg = `Купить «${it.title}» за ${Number(it.price_rub).toFixed(0)} ₽?`;
+  if (tg && tg.showConfirm) tg.showConfirm(msg, (ok) => ok && doBuy(key)); else if (confirm(msg)) doBuy(key);
+}
+async function doBuy(key, accId) {
+  const d = await api("/api/buy", "POST", { item_key: key, acc_id: accId });
+  if (!d.ok) { toast(d.error || "Ошибка покупки"); return; }
+  closeLot(); toast("Куплено: " + (d.phone || "аккаунт"));
+  await syncState(false); setOrderMode("active"); goPage("orders");
+}
+let WAIT = {};
+try { WAIT = JSON.parse(localStorage.getItem("dh_wait") || "{}") || {}; } catch {}
+function saveWait() { try { localStorage.setItem("dh_wait", JSON.stringify(WAIT)); } catch {} }
+async function reqCode(orderId, silent) {
+  const d = await api("/api/code", "POST", { order_id: orderId });
+  if (d.ok && d.code) {
+    delete WAIT[orderId]; saveWait();
+    toast("Код получен"); await syncState(false);
+    return;
+  }
+  if (/Запрос/.test(d.error || "")) {            // код ещё не пришёл — ждём и опрашиваем сами
+    WAIT[orderId] = 1; saveWait(); renderOrders();
+    if (!silent) toast("Ждём код — он появится здесь автоматически");
+  } else if (!silent) toast(d.error || "Ошибка запроса кода");
+}
+setInterval(() => {                                 // авто-проверка кода для ожидающих заказов
+  if (document.hidden || !INIT_DATA) return;
+  Object.keys(WAIT).forEach((id) => {
+    const o = (state.orders || []).find((x) => x.order_id === id);
+    if (!o || o.code) { delete WAIT[id]; saveWait(); return; }
+    reqCode(id, true);
+  });
+}, 8000);
+
+/* ── чат поддержки ── */
+let lastChatLen = 0;
+function renderChat(scroll) {
+  const box = $("chatBox");
+  box.innerHTML = state.chat.length
+    ? state.chat.map((m) => `<div class="bub ${m.from === "user" ? "me" : "ad"}">${esc(m.text)}<span>${hhmm(m.ts)}</span></div>`).join("")
+    : `<div class="empty-card">Опишите проблему — мы ответим в этом чате.</div>`;
+  if (scroll) box.scrollTop = box.scrollHeight;
+}
+async function loadChat(scroll) {
+  const d = await api("/api/support/messages");
+  if (!d.ok) return;
+  const grew = d.messages.length !== state.chat.length;
+  state.chat = d.messages;
+  if (grew || scroll) renderChat(true);
+  const last = state.chat[state.chat.length - 1];
+  if (state.page !== "help" && last && last.from === "admin" && d.messages.length > lastChatLen && lastChatLen) $("chatDot").style.display = "block";
+  lastChatLen = d.messages.length;
+}
+async function sendChat() {
+  const inp = $("chatInput"); const text = inp.value.trim(); if (!text) return;
+  $("chatSend").disabled = true;
+  const d = await api("/api/support/send", "POST", { text });
+  $("chatSend").disabled = false;
+  if (!d.ok) { toast(d.error || "Не отправилось"); return; }
+  inp.value = ""; state.chat = d.messages; lastChatLen = d.messages.length; renderChat(true);
+}
+function quickTopic(t) { $("chatInput").value = t + ": "; $("chatInput").focus(); }
+setInterval(() => { if (!document.hidden && INIT_DATA && (state.page === "help" || true)) loadChat(false); }, 6000);
+
+/* ── настройки ── */
+function toggleLite(el) {
+  state.lite = !state.lite; el.classList.toggle("on", state.lite); document.body.classList.toggle("lite", state.lite);
+  try { localStorage.setItem("dh_lite", JSON.stringify(state.lite)); } catch {}
+}
+
+/* ── синхронизация ── */
+async function syncState(notify) {
+  const tag = $("apiStateTag"), diag = $("diagStatus");
+  setLoaderProgress(60, "Синхронизация баланса и каталога...");
+  if (!INIT_DATA) {
+    $("authBanner").style.display = "block"; tag.textContent = "API: нет Telegram"; tag.style.color = "var(--bad)";
+    diag.textContent = "Не из Telegram"; renderAll(); setLoaderProgress(100, "Откройте через Telegram"); return;
+  }
+  const d = await api("/api/state");
+  if (d && d.ok) {
+    Object.assign(state, d);
+    if (!state.crypto_wallet) state.crypto_wallet = DEFAULT_TON_WALLET;
+    $("authBanner").style.display = "none";
+    tag.textContent = "API: OK"; tag.style.color = "var(--ok)";
+    diag.textContent = `OK • ${Number(d.balance_rub || 0).toFixed(2)} ₽`; diag.style.color = "var(--ok)";
+    renderAll(); setLoaderProgress(100, "Готово"); if (notify) toast("Обновлено");
+  } else {
+    tag.textContent = d.offline ? "API: оффлайн" : "API: ошибка"; tag.style.color = "var(--bad)";
+    diag.textContent = d.error || "Ошибка"; diag.style.color = "var(--bad)";
+    renderAll(); setLoaderProgress(100, "Ошибка ответа API"); if (notify) toast(d.error || "Ошибка сервера");
+  }
+}
+
+(async function boot() {
+  hydrateIcons(); buildWheel(); renderFaq();
+  setLoaderProgress(25, "Подключение к DarkHub...");
+  choosePay("stars");
+  await syncState(false);
+  loadChat(false);
+  const startPage = new URLSearchParams(location.search).get("page");   // открытие из кнопок бота сразу на нужной вкладке
+  if (startPage && document.getElementById("page-" + startPage)) goPage(startPage);
+  setInterval(() => { if (!document.hidden && INIT_DATA) syncState(false); }, 45000);   // обновляем ленту продаж и баланс
+  setTimeout(() => $("preloader").classList.add("hidden"), 380);
+})();
+</script>
+</body>
+</html>
